@@ -1,8 +1,10 @@
 import cv2
 import pickle
+import collections
 
 import numpy as np
 import matplotlib.pyplot as plt
+from keras.preprocessing.image import ImageDataGenerator
 # plt.switch_backend('agg')
 from skimage import exposure
 from collections import defaultdict
@@ -82,6 +84,47 @@ class DataSetTools():
 
         self.visualizeHistogram(labels, fileName, imgPath)
         self.visualizeUniqueImgs(labels, imgs, isGray, imgPath, fileName)
+
+    def balanceClass(self, factor = 5):
+        # key: class    value: count
+        freq = collections.Counter(self.y_train)
+        final_count = self.n_train * factor
+        count_per_class = final_count / self.n_classes
+        # number of fake data per old image for each class
+        self.fake_freq = {}
+        # e.g.   old distribution  70  vs 30      target   200  vs 200
+        # new data needed to balance:
+        # (200 - 70) /70 = ceil(140 / 70) = 2
+        # (200 - 30) /30 = ceil(170 / 30) = 6
+        # (count_per_class - old_count_of_the_class) / old_count_of_the_class
+        for class_id, old_count in freq.items():
+            new_data_needed = int(np.ceil((count_per_class - old_count) / old_count))
+            self.fake_freq[class_id] = new_data_needed
+        print("self.fake_freq", self.fake_freq)
+
+        # balance using keras ImageDataGenerator
+        # target values between 0 and 1 instead by scaling with a 1/255. factor
+        self.datagen =ImageDataGenerator(
+                        data_format='channels_last',
+                        rotation_range=15,
+                        width_shift_range=0.1,
+                        height_shift_range=0.1,
+                        rescale=1./255,
+                        zoom_range=0.2,
+                        horizontal_flip=True)
+
+    def visualizeDatagen(self):
+        print("visualize datagen")
+        img = self.X_train[0]
+        print("img shape", img.shape)
+        img = img.reshape((1,) + img.shape)
+        i = 0
+        for batch in self.datagen.flow(img, batch_size=1,
+                                  save_to_dir='../visualize', save_prefix='sign', save_format='jpeg'):
+            print("i", i)
+            i += 1
+            if i > 20:
+                break  # otherwise the generator would loop indefinitely
 
 class ImgPreprocess():
     def __init__(self):

@@ -8,7 +8,7 @@ class Pipeline():
         self.visualize_dir = visualize_dir
         self.exploreDataset()
         # todo: uncomment buildModel:
-        self.buildNetwork()
+        # self.buildNetwork()
 
     def exploreDataset(self):
         # load data
@@ -16,6 +16,8 @@ class Pipeline():
         self.dataTool.loadData(self.data_dir)
         self.dataTool.summarizeData()
         self.dataTool.visualizeData(tag='train', imgPath=self.visualize_dir)
+        self.dataTool.balanceClass()
+        self.dataTool.visualizeDatagen()
         # summarize dataset info
         self.num_classes = self.dataTool.n_classes
         img_width, img_height, img_channels = self.dataTool.image_shape
