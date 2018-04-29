@@ -12,6 +12,13 @@ Input: video from camera mounted on top of a car
 Output: annotated video 
 Tools: color selection, region of interest selection, grayscaling, Gaussian smoothing, Canny Edge Detection and Hough Tranform line detection
 
+Result video
+----
+Solid Yellow Left:  https://youtu.be/f_QvD_0OIc4
+
+Solid White Right: https://youtu.be/LItjM45d9PY
+
+
 Files
 -----
 P1.ipynb  : implementation
