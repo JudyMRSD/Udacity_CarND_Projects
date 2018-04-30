@@ -1,5 +1,6 @@
 from LeNet import LeNet
 from utils import DataSetTools
+from keras.utils import np_utils # utilities for one-hot encoding of ground truth values
 
 class Pipeline():
     def __init__(self, data_dir, visualize_dir):
@@ -9,6 +10,7 @@ class Pipeline():
         self.exploreDataset()
         # todo: uncomment buildModel:
         # self.buildNetwork()
+        self.batch_size = 1
 
     def exploreDataset(self):
         # load data
@@ -24,11 +26,17 @@ class Pipeline():
 
     def buildNetwork(self):
         self.lenet = LeNet(self.num_classes, self.img_params)
-        self.lenet.build()
+        self.lenetModel = self.lenet.build()
 
 
     def train(self):
-        pass
+        one_hot_y_train = np_utils.to_categorical(self.dataTool.y_train, self.num_classes)  # One-hot encode the labels
+
+        train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train, one_hot_y_train, batch_size=32)
+        print("train_generator", train_generator)
+        history = self.lenetModel.fit_generator(train_generator,
+                                           steps_per_epoch= 32,
+                                           epochs=20)
 
     def classify(self):
         pass
@@ -44,8 +52,8 @@ def main():
     traffic_sign_pipeline = Pipeline(data_dir, visualize_dir)
 
     traffic_sign_pipeline.exploreDataset()
-
-    # traffic_sign_pipeline.train()
+    traffic_sign_pipeline.buildNetwork()
+    traffic_sign_pipeline.train()
     # traffic_sign_pipeline.classify()
 
 

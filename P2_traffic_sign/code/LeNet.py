@@ -4,7 +4,7 @@ from keras.layers.convolutional import MaxPooling2D
 from keras.layers.core import Activation
 from keras.layers.core import Flatten
 from keras.layers.core import Dense
-
+import keras
 
 class LeNet():
     # convlayer_filters, convlayer_kernel_size, padding, activation as input to make parameter tuning easier
@@ -37,7 +37,9 @@ class LeNet():
         model.add(Activation("softmax"))
         print("model summary")
         print(model.summary())
-
+        model.compile(loss=keras.losses.categorical_crossentropy,
+                      optimizer=keras.optimizers.Adadelta(),
+                      metrics=['accuracy'])
         return model
 
 

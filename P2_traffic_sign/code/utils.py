@@ -30,7 +30,6 @@ class DataSetTools():
             test = pickle.load(f)
 
         self.X_train, self.y_train = train['features'], train['labels']
-
         self.X_valid, self.y_valid = valid['features'], valid['labels']
         self.X_test, self.y_test = test['features'], test['labels']
 
@@ -67,15 +66,15 @@ class DataSetTools():
             unique_images = imgs[unique_indices]
             numImgs = self.n_classes
         elif tag == 'augment':
-            img = imgs[0]
-            img = img.reshape((1,) + img.shape)
+            img = np.expand_dims(imgs[0], 0)
             label = labels[0:1]
             unique_images = []
             numImgs = 10
             for i in range(0,numImgs):
-                aug_img, aug_label = self.datagen.flow(img, label, batch_size=1).next()
+                aug_img, aug_label = self.train_datagen.flow(img, label).next()
                 aug_img = np.squeeze(aug_img)
                 unique_images.append(aug_img)
+                print("unique_images", len(unique_images))
         fig = plt.figure()
         for i in range(numImgs):
             ax = fig.add_subplot(numRows, self.n_classes / numRows + 1, i + 1, xticks=[], yticks=[])
@@ -96,70 +95,16 @@ class DataSetTools():
         self.visualizeHistogram(labels, tag, imgPath)
         self.visualizeUniqueImgs(labels, imgs, tag, imgPath)
 
-
     def data_augment(self):
-
-
-        # Y channel calculation from: https://github.com/navoshta/traffic-signs/blob/master/Traffic_Signs_Recognition.ipynb
-        threeChannelShape = self.X_train.shape
-        # shape is tuple, not mutable
-        singleChannelShape = threeChannelShape[0:3] + (1,)
-        # set to single channel
-        X_singleChannel = np.zeros(singleChannelShape)
-
-        for i in range(0, len(self.X_train)):
-            img = self.X_train[i]
-            gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-            # print("gray shape", gray_img.shape) # (32, 32)
-            gray_img = np.expand_dims(gray_img, axis=2)
-
-            X_singleChannel[i] = gray_img
-        self.X_train = X_singleChannel
-            # print("gray img shape",X_singleChannel[i].shape) # (32,32,1)
-
-        # plt.imshow(X[0], cmap='gray')
-        # plt.show()
-
-
-        # # balance using keras ImageDataGenerator
-        # # target values between 0 and 1 instead by scaling with a 1/255. factor
-        # self.datagen =ImageDataGenerator(zca_whitening=True)
-        # self.datagen.fit(self.X_train)
-        # # configure batch size and retrieve one batch of images
-        # for X_batch, y_batch in self.datagen.flow(self.X_train, self.y_train, batch_size=9):
-        #     # create a grid of 3x3 images
-        #     for i in range(0, 9):
-        #         plt.subplot(330 + 1 + i)
-        #         plt.imshow(X_batch[i])
-        #     # show the plot
-        #     plt.show()
-        #     break
-        #h =self.image_shape[0]
-        #w = self.image_shape[1]
-
-        X_train = self.X_train  # Xtrain (34799, 32, 32, 3)
-        # convert from int to float
-        # X_train = X_train.astype('float32')
-        # X_test = X_test.astype('float32')
-        # define data preparation
-        datagen = ImageDataGenerator(zca_whitening=True,  data_format = "channels_last")
-        # fit parameters from data
-        datagen.fit(X_train)
-        # configure batch size and retrieve one batch of images
-        for X_batch, y_batch in datagen.flow(X_train, self.y_train,batch_size=9):
-            # create a grid of 3x3 images
-            for i in range(0, 9):
-                plt.subplot(330 + 1 + i)
-
-                plt.imshow(np.squeeze(X_batch[i]),cmap=plt.get_cmap('gray'))
-            # show the plot
-                plt.show()
-            break
-
-        #self.visualizeUniqueImgs(self.y_train, self.X_train, tag='augment', imgPath='../visualize/')
-
-
-
+        # balance using keras ImageDataGenerator
+        self.train_datagen =ImageDataGenerator(
+                        data_format='channels_last',
+                        rotation_range=15,
+                        width_shift_range=0.1,
+                        height_shift_range=0.1,
+                        zoom_range=0.2,
+                        horizontal_flip=True)
+        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='augment', imgPath='../visualize/')
 
 
 class ImgPreprocess():
@@ -169,4 +114,3 @@ class ImgPreprocess():
         pass
     def preprocess(self):
         pass
-
