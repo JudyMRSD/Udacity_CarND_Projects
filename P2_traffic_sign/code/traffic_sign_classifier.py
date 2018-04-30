@@ -16,8 +16,7 @@ class Pipeline():
         self.dataTool.loadData(self.data_dir)
         self.dataTool.summarizeData()
         self.dataTool.visualizeData(tag='train', imgPath=self.visualize_dir)
-        self.dataTool.balanceClass()
-        self.dataTool.visualizeDatagen()
+        self.dataTool.data_augment()
         # summarize dataset info
         self.num_classes = self.dataTool.n_classes
         img_width, img_height, img_channels = self.dataTool.image_shape

@@ -37,6 +37,7 @@ class DataSetTools():
         self.n_train = self.X_train.shape[0]
         self.n_test = self.X_test.shape[0]
         self.image_shape = self.X_train[0].shape
+
         self.n_classes = np.unique(self.y_train).shape[0]
 
         print("Number of training examples =", self.n_train)
@@ -55,53 +56,46 @@ class DataSetTools():
         plt.savefig(imgPath + fileName + '_histogram.jpg')
         # plt.show()
 
-    def visualizeUniqueImgs(self, labels, imgs, isGray, imgPath, fileName):
+    def visualizeUniqueImgs(self, labels, imgs, tag, imgPath):
         # plot unique images
+
         numRows = 5
-        _, unique_indices = np.unique(labels, return_index=True)
-        unique_images = imgs[unique_indices]
+
+        if tag == 'train':
+            _, unique_indices = np.unique(labels, return_index=True)
+            unique_images = imgs[unique_indices]
+            numImgs = self.n_classes
+        elif tag == 'augment':
+            img = np.expand_dims(imgs[0], 0)
+            label = labels[0:1]
+            unique_images = []
+            numImgs = 10
+            for i in range(0,numImgs):
+                aug_img, aug_label = self.datagen.flow(img, label).next()
+                aug_img = np.uint8(np.squeeze(aug_img))
+                unique_images.append(aug_img)
+                print("unique_images", len(unique_images))
         fig = plt.figure()
-        for i in range(self.n_classes):
+        for i in range(numImgs):
             ax = fig.add_subplot(numRows, self.n_classes / numRows + 1, i + 1, xticks=[], yticks=[])
             ax.set_title(i)
-            if (isGray == True):
-                ax.imshow(np.squeeze(unique_images[i]), cmap='gray')
-            else:
-                ax.imshow(unique_images[i])
+            ax.imshow(unique_images[i])
 
-        plt.savefig(imgPath + fileName + '_sample')
+        plt.savefig(imgPath + tag + '_sample')
         plt.close('all')
 
 
     def visualizeData(self, tag, imgPath):
         # two options, training visualize and augmented data visualize
         if tag == 'train':
-            isGray = False
-            imgs, labels, fileName = self.X_train, self.y_train, 'training'
+            imgs, labels = self.X_train, self.y_train
         elif tag == 'augment':
-            isGray = True
-            imgs, labels, fileName = self.X_train_augment, self.y_train, 'augmented'
+            imgs, labels = self.X_train_augment, self.y_train
 
-        self.visualizeHistogram(labels, fileName, imgPath)
-        self.visualizeUniqueImgs(labels, imgs, isGray, imgPath, fileName)
+        self.visualizeHistogram(labels, tag, imgPath)
+        self.visualizeUniqueImgs(labels, imgs, tag, imgPath)
 
-    def balanceClass(self, factor = 5):
-        # key: class    value: count
-        freq = collections.Counter(self.y_train)
-        final_count = self.n_train * factor
-        count_per_class = final_count / self.n_classes
-        # number of fake data per old image for each class
-        self.fake_freq = {}
-        # e.g.   old distribution  70  vs 30      target   200  vs 200
-        # new data needed to balance:
-        # (200 - 70) /70 = ceil(140 / 70) = 2
-        # (200 - 30) /30 = ceil(170 / 30) = 6
-        # (count_per_class - old_count_of_the_class) / old_count_of_the_class
-        for class_id, old_count in freq.items():
-            new_data_needed = int(np.ceil((count_per_class - old_count) / old_count))
-            self.fake_freq[class_id] = new_data_needed
-        print("self.fake_freq", self.fake_freq)
-
+    def data_augment(self):
         # balance using keras ImageDataGenerator
         # target values between 0 and 1 instead by scaling with a 1/255. factor
         self.datagen =ImageDataGenerator(
@@ -112,19 +106,8 @@ class DataSetTools():
                         rescale=1./255,
                         zoom_range=0.2,
                         horizontal_flip=True)
+        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='augment', imgPath='../visualize/')
 
-    def visualizeDatagen(self):
-        print("visualize datagen")
-        img = self.X_train[0]
-        print("img shape", img.shape)
-        img = img.reshape((1,) + img.shape)
-        i = 0
-        for batch in self.datagen.flow(img, batch_size=1,
-                                  save_to_dir='../visualize', save_prefix='sign', save_format='jpeg'):
-            print("i", i)
-            i += 1
-            if i > 20:
-                break  # otherwise the generator would loop indefinitely
 
 class ImgPreprocess():
     def __init__(self):
