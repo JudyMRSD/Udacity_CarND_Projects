@@ -30,6 +30,7 @@ class DataSetTools():
             test = pickle.load(f)
 
         self.X_train, self.y_train = train['features'], train['labels']
+
         self.X_valid, self.y_valid = valid['features'], valid['labels']
         self.X_test, self.y_test = test['features'], test['labels']
 
@@ -73,13 +74,8 @@ class DataSetTools():
             numImgs = 10
             for i in range(0,numImgs):
                 aug_img, aug_label = self.datagen.flow(img, label, batch_size=1).next()
-                aug_img = np.uint8(np.squeeze(aug_img))
-                print('aug_img', aug_img.shape)
-
-                cv2.imwrite('../visualize/'+str(i)+"aug_img.jpg", aug_img)
-
+                aug_img = np.squeeze(aug_img)
                 unique_images.append(aug_img)
-                print("unique_images", len(unique_images))
         fig = plt.figure()
         for i in range(numImgs):
             ax = fig.add_subplot(numRows, self.n_classes / numRows + 1, i + 1, xticks=[], yticks=[])
@@ -100,41 +96,69 @@ class DataSetTools():
         self.visualizeHistogram(labels, tag, imgPath)
         self.visualizeUniqueImgs(labels, imgs, tag, imgPath)
 
+
     def data_augment(self):
-        # balance using keras ImageDataGenerator
-        # target values between 0 and 1 instead by scaling with a 1/255. factor
-        self.datagen =ImageDataGenerator(
-                        data_format='channels_last',
-                        rotation_range=15,
-                        width_shift_range=0.1,
-                        height_shift_range=0.1,
-                        rescale=1./255,
-                        zoom_range=0.2,
-                        horizontal_flip=True)
-        self.visualizeDatagen()
-        # self.visualizeUniqueImgs(self.y_train, self.X_train, tag='augment', imgPath='../visualize/')
 
-    def visualizeDatagen(self):
-        # take a random image from the training set
-        img_rgb = self.X_train[0]
 
-        # # plot the original image
-        # plt.figure(figsize=(1, 1))
-        # plt.imshow(img_rgb)
-        # plt.title('Example of RGB image (class = {})'.format(self.y_train[0]))
+        # Y channel calculation from: https://github.com/navoshta/traffic-signs/blob/master/Traffic_Signs_Recognition.ipynb
+        threeChannelShape = self.X_train.shape
+        # shape is tuple, not mutable
+        singleChannelShape = threeChannelShape[0:3] + (1,)
+        # set to single channel
+        X_singleChannel = np.zeros(singleChannelShape)
+
+        for i in range(0, len(self.X_train)):
+            img = self.X_train[i]
+            gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            # print("gray shape", gray_img.shape) # (32, 32)
+            gray_img = np.expand_dims(gray_img, axis=2)
+
+            X_singleChannel[i] = gray_img
+        self.X_train = X_singleChannel
+            # print("gray img shape",X_singleChannel[i].shape) # (32,32,1)
+
+        # plt.imshow(X[0], cmap='gray')
         # plt.show()
 
-        # plot some randomly augmented images
-        rows, cols = 4, 10
-        fig, ax_array = plt.subplots(rows, cols)
-        for ax in ax_array.ravel():
-            augmented_img, _ = self.datagen.flow(np.expand_dims(img_rgb, 0), self.y_train[0:1]).next()
-            augmented_img = np.squeeze(augmented_img)
-            ax.imshow(augmented_img)
-        plt.setp([a.get_xticklabels() for a in ax_array.ravel()], visible=False)
-        plt.setp([a.get_yticklabels() for a in ax_array.ravel()], visible=False)
-        plt.suptitle('Random examples of data augmentation (starting from the previous image)')
-        plt.show()
+
+        # # balance using keras ImageDataGenerator
+        # # target values between 0 and 1 instead by scaling with a 1/255. factor
+        # self.datagen =ImageDataGenerator(zca_whitening=True)
+        # self.datagen.fit(self.X_train)
+        # # configure batch size and retrieve one batch of images
+        # for X_batch, y_batch in self.datagen.flow(self.X_train, self.y_train, batch_size=9):
+        #     # create a grid of 3x3 images
+        #     for i in range(0, 9):
+        #         plt.subplot(330 + 1 + i)
+        #         plt.imshow(X_batch[i])
+        #     # show the plot
+        #     plt.show()
+        #     break
+        #h =self.image_shape[0]
+        #w = self.image_shape[1]
+
+        X_train = self.X_train  # Xtrain (34799, 32, 32, 3)
+        # convert from int to float
+        # X_train = X_train.astype('float32')
+        # X_test = X_test.astype('float32')
+        # define data preparation
+        datagen = ImageDataGenerator(zca_whitening=True,  data_format = "channels_last")
+        # fit parameters from data
+        datagen.fit(X_train)
+        # configure batch size and retrieve one batch of images
+        for X_batch, y_batch in datagen.flow(X_train, self.y_train,batch_size=9):
+            # create a grid of 3x3 images
+            for i in range(0, 9):
+                plt.subplot(330 + 1 + i)
+
+                plt.imshow(np.squeeze(X_batch[i]),cmap=plt.get_cmap('gray'))
+            # show the plot
+                plt.show()
+            break
+
+        #self.visualizeUniqueImgs(self.y_train, self.X_train, tag='augment', imgPath='../visualize/')
+
+
 
 
 
