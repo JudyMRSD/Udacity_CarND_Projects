@@ -106,6 +106,30 @@ class DataSetTools():
                         horizontal_flip=True)
         self.visualizeUniqueImgs(self.y_train, self.X_train, tag='augment', imgPath='../visualize/')
 
+    def gray(X):
+        threeChannelShape = X.shape
+        # shape is tuple, not mutable
+        singleChannelShape = threeChannelShape[0:3] + (1,)
+        # set to single channel
+        X_singleChannel = np.zeros(singleChannelShape)
+
+        for i in range(0, len(X)):
+            img = X[i]
+            gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            # print("gray shape", gray_img.shape) # (32, 32)
+            gray_img = np.expand_dims(gray_img, axis=2)
+            # TODO: fix this
+            gray_img = normalization(gray_img)
+
+            X_singleChannel[i] = gray_img
+
+            # print("gray img shape",X_singleChannel[i].shape) # (32,32,1)
+
+        # plt.imshow(X[0], cmap='gray')
+        # plt.show()
+
+        return X_singleChannel
+
 
 class ImgPreprocess():
     def __init__(self):

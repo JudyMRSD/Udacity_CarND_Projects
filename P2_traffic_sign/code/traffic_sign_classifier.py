@@ -1,16 +1,15 @@
 from LeNet import LeNet
 from utils import DataSetTools
 from keras.utils import np_utils # utilities for one-hot encoding of ground truth values
+from keras.callbacks import History
 
 class Pipeline():
     def __init__(self, data_dir, visualize_dir):
         # img_params = img.shape()
         self.data_dir = data_dir
         self.visualize_dir = visualize_dir
-        self.exploreDataset()
-        # todo: uncomment buildModel:
-        # self.buildNetwork()
-        self.batch_size = 1
+
+        self.batch_size = 128
 
     def exploreDataset(self):
         # load data
@@ -32,11 +31,14 @@ class Pipeline():
     def train(self):
         one_hot_y_train = np_utils.to_categorical(self.dataTool.y_train, self.num_classes)  # One-hot encode the labels
 
-        train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train, one_hot_y_train, batch_size=32)
+        train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train, one_hot_y_train, batch_size=self.batch_size)
         print("train_generator", train_generator)
-        history = self.lenetModel.fit_generator(train_generator,
-                                           steps_per_epoch= 32,
+        #history = History()
+        self.lenetModel.fit_generator(train_generator,
                                            epochs=20)
+        #                                   callbacks = [history])
+        # loss = history.history['loss']
+        # print("loss", loss)
 
     def classify(self):
         pass
