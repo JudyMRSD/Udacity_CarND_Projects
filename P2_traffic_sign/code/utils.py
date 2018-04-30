@@ -66,13 +66,18 @@ class DataSetTools():
             unique_images = imgs[unique_indices]
             numImgs = self.n_classes
         elif tag == 'augment':
-            img = np.expand_dims(imgs[0], 0)
+            img = imgs[0]
+            img = img.reshape((1,) + img.shape)
             label = labels[0:1]
             unique_images = []
             numImgs = 10
             for i in range(0,numImgs):
-                aug_img, aug_label = self.datagen.flow(img, label).next()
+                aug_img, aug_label = self.datagen.flow(img, label, batch_size=1).next()
                 aug_img = np.uint8(np.squeeze(aug_img))
+                print('aug_img', aug_img.shape)
+
+                cv2.imwrite('../visualize/'+str(i)+"aug_img.jpg", aug_img)
+
                 unique_images.append(aug_img)
                 print("unique_images", len(unique_images))
         fig = plt.figure()
@@ -106,7 +111,31 @@ class DataSetTools():
                         rescale=1./255,
                         zoom_range=0.2,
                         horizontal_flip=True)
-        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='augment', imgPath='../visualize/')
+        self.visualizeDatagen()
+        # self.visualizeUniqueImgs(self.y_train, self.X_train, tag='augment', imgPath='../visualize/')
+
+    def visualizeDatagen(self):
+        # take a random image from the training set
+        img_rgb = self.X_train[0]
+
+        # # plot the original image
+        # plt.figure(figsize=(1, 1))
+        # plt.imshow(img_rgb)
+        # plt.title('Example of RGB image (class = {})'.format(self.y_train[0]))
+        # plt.show()
+
+        # plot some randomly augmented images
+        rows, cols = 4, 10
+        fig, ax_array = plt.subplots(rows, cols)
+        for ax in ax_array.ravel():
+            augmented_img, _ = self.datagen.flow(np.expand_dims(img_rgb, 0), self.y_train[0:1]).next()
+            augmented_img = np.squeeze(augmented_img)
+            ax.imshow(augmented_img)
+        plt.setp([a.get_xticklabels() for a in ax_array.ravel()], visible=False)
+        plt.setp([a.get_yticklabels() for a in ax_array.ravel()], visible=False)
+        plt.suptitle('Random examples of data augmentation (starting from the previous image)')
+        plt.show()
+
 
 
 class ImgPreprocess():
