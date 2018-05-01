@@ -33,6 +33,10 @@ class DataSetTools():
         self.X_valid, self.y_valid = valid['features'], valid['labels']
         self.X_test, self.y_test = test['features'], test['labels']
 
+        self.X_train_gray = self.gray(self.X_train)
+        self.X_valid_gray = self.gray(self.X_valid)
+
+
     def summarizeData(self):
         self.n_train = self.X_train.shape[0]
         self.n_test = self.X_test.shape[0]
@@ -56,16 +60,18 @@ class DataSetTools():
         plt.savefig(imgPath + fileName + '_histogram.jpg')
         # plt.show()
 
-    def visualizeUniqueImgs(self, labels, imgs, tag, imgPath):
+    def visualizeUniqueImgs(self, labels, imgs, tag, imgPath, isGray):
         # plot unique images
 
         numRows = 5
 
         if tag == 'train':
+            print("isGray, train", isGray)
             _, unique_indices = np.unique(labels, return_index=True)
             unique_images = imgs[unique_indices]
             numImgs = self.n_classes
         elif tag == 'augment':
+            print("isGray, augment", isGray)
             img = np.expand_dims(imgs[0], 0)
             label = labels[0:1]
             unique_images = []
@@ -79,7 +85,10 @@ class DataSetTools():
         for i in range(numImgs):
             ax = fig.add_subplot(numRows, self.n_classes / numRows + 1, i + 1, xticks=[], yticks=[])
             ax.set_title(i)
-            ax.imshow(unique_images[i])
+            if isGray == True:
+                ax.imshow(unique_images[i], cmap='gray')
+            else:
+                ax.imshow(unique_images[i])
 
         plt.savefig(imgPath + tag + '_sample')
         plt.close('all')
@@ -88,12 +97,14 @@ class DataSetTools():
     def visualizeData(self, tag, imgPath):
         # two options, training visualize and augmented data visualize
         if tag == 'train':
+            isGray = False
             imgs, labels = self.X_train, self.y_train
         elif tag == 'augment':
+            isGray = True
             imgs, labels = self.X_train_augment, self.y_train
 
         self.visualizeHistogram(labels, tag, imgPath)
-        self.visualizeUniqueImgs(labels, imgs, tag, imgPath)
+        self.visualizeUniqueImgs(labels, imgs, tag, imgPath, isGray)
 
     def data_augment(self):
         # balance using keras ImageDataGenerator
@@ -104,30 +115,23 @@ class DataSetTools():
                         height_shift_range=0.1,
                         zoom_range=0.2,
                         horizontal_flip=True)
-        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='augment', imgPath='../visualize/')
+        self.visualizeUniqueImgs(self.y_train, self.X_train_gray, tag='augment', imgPath='../visualize/', isGray=True)
 
-    def gray(X):
-        threeChannelShape = X.shape
+    def gray(self, X):
         # shape is tuple, not mutable
-        singleChannelShape = threeChannelShape[0:3] + (1,)
+        print("x shape", X.shape) # (34799, 32, 32, 3)
+        singleChannelShape = X.shape[0:3]
         # set to single channel
         X_singleChannel = np.zeros(singleChannelShape)
+        print("X_singleChannel shape", X_singleChannel.shape) # (34799, 32, 32)
 
         for i in range(0, len(X)):
             img = X[i]
             gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-            # print("gray shape", gray_img.shape) # (32, 32)
-            gray_img = np.expand_dims(gray_img, axis=2)
-            # TODO: fix this
-            gray_img = normalization(gray_img)
-
             X_singleChannel[i] = gray_img
 
-            # print("gray img shape",X_singleChannel[i].shape) # (32,32,1)
-
-        # plt.imshow(X[0], cmap='gray')
-        # plt.show()
-
+        X_singleChannel =  np.expand_dims(X_singleChannel, axis=3) # (34799, 32, 32, 1)
+        print("X_singleChannel shape", X_singleChannel.shape)
         return X_singleChannel
 
 
