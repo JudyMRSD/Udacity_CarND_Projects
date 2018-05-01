@@ -21,6 +21,9 @@ class Pipeline():
         # summarize dataset info
         self.num_classes = self.dataTool.n_classes
         img_width, img_height, img_channels = self.dataTool.image_shape
+        print("img_width, img_height, img_channels", img_width, img_height, img_channels)
+        # gray:
+        img_channels = 1
         self.img_params = [img_width, img_height, img_channels]
 
     def buildNetwork(self):
@@ -30,8 +33,8 @@ class Pipeline():
 
     def train(self):
         one_hot_y_train = np_utils.to_categorical(self.dataTool.y_train, self.num_classes)  # One-hot encode the labels
-
-        train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train, one_hot_y_train, batch_size=self.batch_size)
+        # train using gray images
+        train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train_gray, one_hot_y_train, batch_size=self.batch_size)
         print("train_generator", train_generator)
         #history = History()
         self.lenetModel.fit_generator(train_generator,
