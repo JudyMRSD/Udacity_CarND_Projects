@@ -133,12 +133,3 @@ class DataSetTools():
         X_singleChannel =  np.expand_dims(X_singleChannel, axis=3) # (34799, 32, 32, 1)
         print("X_singleChannel shape", X_singleChannel.shape)
         return X_singleChannel
-
-
-class ImgPreprocess():
-    def __init__(self):
-        self.a = 1
-    def imgStats(self):
-        pass
-    def preprocess(self):
-        pass

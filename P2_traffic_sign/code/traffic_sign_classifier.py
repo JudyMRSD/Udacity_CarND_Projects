@@ -1,3 +1,7 @@
+# todo: add early stopping uisng validation accuracy
+# https://stackoverflow.com/questions/43906048/keras-early-stopping
+
+
 from LeNet import LeNet
 from utils import DataSetTools
 from keras.utils import np_utils # utilities for one-hot encoding of ground truth values
