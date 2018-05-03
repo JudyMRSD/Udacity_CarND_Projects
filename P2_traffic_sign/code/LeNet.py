@@ -38,7 +38,7 @@ class LeNet():
         print("model summary")
         print(model.summary())
         model.compile(loss=keras.losses.categorical_crossentropy,
-                      optimizer=keras.optimizers.Adadelta(),
+                      optimizer=keras.optimizers.Adam(),
                       metrics=['accuracy'])
         return model
 

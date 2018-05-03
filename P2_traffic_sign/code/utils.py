@@ -118,6 +118,7 @@ class DataSetTools():
                         horizontal_flip=True)
         self.visualizeUniqueImgs(self.y_train, self.X_train_gray, tag='augment', imgPath='../visualize/', isGray=True)
 
+
     def gray(self, X):
         # shape is tuple, not mutable
         print("x shape", X.shape) # (34799, 32, 32, 3)

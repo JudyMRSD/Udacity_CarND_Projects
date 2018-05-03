@@ -10,6 +10,8 @@ import glob
 from keras.models import load_model
 import cv2
 import numpy as np
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+
 
 
 class Pipeline():
@@ -43,13 +45,25 @@ class Pipeline():
 
     def train(self):
         one_hot_y_train = np_utils.to_categorical(self.dataTool.y_train, self.num_classes)  # One-hot encode the labels
+        one_hot_y_valid = np_utils.to_categorical(self.dataTool.y_valid, self.num_classes)  # One-hot encode the labels
+
         # train using gray images
         train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train_gray, one_hot_y_train, batch_size=self.batch_size)
+        validation_XY = (self.dataTool.X_valid_gray, one_hot_y_valid)
         print("train_generator", train_generator)
         #history = History()
+
+        # monitor the test (validation) loss at each epoch
+        # and after the test loss has not improved after two epochs, training is interrupted
+
+        # won’t get the best model, but the model two epochs after the best model
+        callbacks = [EarlyStopping(monitor='val_loss', patience=2),
+                     ModelCheckpoint(filepath='best_model.h5', monitor='val_loss', save_best_only=True)]
+
         self.lenetModel.fit_generator(train_generator,
-                                           epochs=1)
-        #                                   callbacks = [history])
+                                      epochs=200,
+                                      callbacks= callbacks,
+                                      validation_data = validation_XY)
 
         # loss = history.history['loss']
         # print("loss", loss)
@@ -98,8 +112,8 @@ def main():
     test_labels = [34, 25, 3, 14, 13]
     traffic_sign_pipeline = Pipeline(data_dir, visualize_dir, train_model_path= model_path, test_model_path= model_path)
     traffic_sign_pipeline.exploreDataset()
-    # traffic_sign_pipeline.buildNetwork()
-    # traffic_sign_pipeline.train()
+    traffic_sign_pipeline.buildNetwork()
+    traffic_sign_pipeline.train()
     traffic_sign_pipeline.test(test_data_dir, test_labels)
 
 
