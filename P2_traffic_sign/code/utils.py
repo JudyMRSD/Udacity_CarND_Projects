@@ -80,7 +80,7 @@ class DataSetTools():
                 aug_img, aug_label = self.train_datagen.flow(img, label).next()
                 aug_img = np.squeeze(aug_img)
                 unique_images.append(aug_img)
-                print("unique_images", len(unique_images))
+                # print("unique_images", len(unique_images))
         fig = plt.figure()
         for i in range(numImgs):
             ax = fig.add_subplot(numRows, self.n_classes / numRows + 1, i + 1, xticks=[], yticks=[])
@@ -91,7 +91,8 @@ class DataSetTools():
                 ax.imshow(unique_images[i])
 
         plt.savefig(imgPath + tag + '_sample')
-        plt.close('all')
+        # plt.show()
+        # plt.close('all')
 
 
     def visualizeData(self, tag, imgPath):
