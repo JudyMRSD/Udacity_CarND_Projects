@@ -63,24 +63,35 @@ class DataSetTools():
     def visualizeUniqueImgs(self, labels, imgs, tag, imgPath, isGray):
         # plot unique images
 
-        numRows = 5
+        numRows = 1
 
         if tag == 'train':
             print("isGray, train", isGray)
             _, unique_indices = np.unique(labels, return_index=True)
             unique_images = imgs[unique_indices]
             numImgs = self.n_classes
+            numRows = 5
         elif tag == 'augment':
             print("isGray, augment", isGray)
             img = np.expand_dims(imgs[0], 0)
             label = labels[0:1]
             unique_images = []
             numImgs = 10
+            numRows = 5
+
             for i in range(0,numImgs):
                 aug_img, aug_label = self.train_datagen.flow(img, label).next()
                 aug_img = np.squeeze(aug_img)
                 unique_images.append(aug_img)
                 # print("unique_images", len(unique_images))
+
+        elif tag == 'test':
+            print("test visualize")
+            numRows = 5
+            unique_images = imgs
+            numImgs = len(unique_images)
+            print("numImgs", numImgs)
+
         fig = plt.figure()
         for i in range(numImgs):
             ax = fig.add_subplot(numRows, self.n_classes / numRows + 1, i + 1, xticks=[], yticks=[])
@@ -88,6 +99,7 @@ class DataSetTools():
             if isGray == True:
                 ax.imshow(unique_images[i], cmap='gray')
             else:
+                print("unique_images[i]", i, unique_images[i].shape)
                 ax.imshow(unique_images[i])
 
         plt.savefig(imgPath + tag + '_sample')

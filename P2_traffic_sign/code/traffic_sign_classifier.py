@@ -3,6 +3,8 @@
 
 
 from LeNet import LeNet
+import matplotlib.pyplot as plt
+
 from utils import DataSetTools
 from keras.utils import np_utils # utilities for one-hot encoding of ground truth values
 from keras.callbacks import History
@@ -58,7 +60,7 @@ class Pipeline():
 
         # won’t get the best model, but the model two epochs after the best model
         callbacks = [EarlyStopping(monitor='val_loss', patience=2),
-                     ModelCheckpoint(filepath='best_model.h5', monitor='val_loss', save_best_only=True)]
+                     ModelCheckpoint(filepath=self.train_model_path, monitor='val_loss', save_best_only=True)]
 
         self.lenetModel.fit_generator(train_generator,
                                       epochs=200,
@@ -68,7 +70,7 @@ class Pipeline():
         # loss = history.history['loss']
         # print("loss", loss)
         # save model
-        self.lenetModel.save(self.train_model_path)
+        # self.lenetModel.save(self.train_model_path)
         # todo: include validation set , early stopping when validation accuracy and training accuracy close
         # https://chrisalbon.com/deep_learning/keras/neural_network_early_stopping/
 
@@ -77,26 +79,31 @@ class Pipeline():
     def test(self, test_data_dir, test_labels):
         print("enter test:")
         files = sorted(glob.glob(test_data_dir+'*.jpg'))
+        color_test_imgs = []
         test_images = []
+
         for f in files:
             img = cv2.imread(f)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, (self.img_width, self.img_height)) # (32, 32, 3)
             # cv2.imshow("imgs", img)
             # cv2.waitKey(0)
             gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # (32, 32)
             gray_img = np.expand_dims(gray_img, 2)  # (32, 32, 1)
+            color_test_imgs.append(img)
             test_images.append(gray_img)
+
 
         test_images = np.array(test_images)
         print("test_images shape", test_images.shape)
         # convert images to a 4D tensor to feed into keras model
         test_model = load_model(self.test_model_path)
-        out = test_model.predict(test_images)
+        # out = test_model.predict(test_images)
         out_class = test_model.predict_classes(test_images)
-
+        self.dataTool.visualizeUniqueImgs(test_labels, color_test_imgs, tag="test", imgPath = '../visualize/', isGray=False)
         print("test_labels", test_labels)
-        print("out", out)
-        print("out class", out_class)
+        # print("out", out)
+        print("out class", out_class) # out class [12 25  0 14 13]
         # todo: count accuracy percent
 
 
@@ -112,8 +119,8 @@ def main():
     test_labels = [34, 25, 3, 14, 13]
     traffic_sign_pipeline = Pipeline(data_dir, visualize_dir, train_model_path= model_path, test_model_path= model_path)
     traffic_sign_pipeline.exploreDataset()
-    traffic_sign_pipeline.buildNetwork()
-    traffic_sign_pipeline.train()
+    # traffic_sign_pipeline.buildNetwork()
+    # traffic_sign_pipeline.train()
     traffic_sign_pipeline.test(test_data_dir, test_labels)
 
 
