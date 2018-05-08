@@ -5,7 +5,7 @@
 from LeNet import LeNet
 import matplotlib.pyplot as plt
 
-from utils import DataSetTools
+from utils import DataSetTools, TrainMonitorTools
 from keras.utils import np_utils # utilities for one-hot encoding of ground truth values
 from keras.callbacks import History
 import glob
@@ -46,6 +46,7 @@ class Pipeline():
 
 
     def train(self):
+        self.trainMonitTool = TrainMonitorTools()
         one_hot_y_train = np_utils.to_categorical(self.dataTool.y_train, self.num_classes)  # One-hot encode the labels
         one_hot_y_valid = np_utils.to_categorical(self.dataTool.y_valid, self.num_classes)  # One-hot encode the labels
 
@@ -62,17 +63,11 @@ class Pipeline():
         callbacks = [EarlyStopping(monitor='val_loss', patience=2),
                      ModelCheckpoint(filepath=self.train_model_path, monitor='val_loss', save_best_only=True)]
 
-        self.lenetModel.fit_generator(train_generator,
-                                      epochs=200,
+        history = self.lenetModel.fit_generator(train_generator,
+                                      epochs=3,
                                       callbacks= callbacks,
                                       validation_data = validation_XY)
-
-        # loss = history.history['loss']
-        # print("loss", loss)
-        # save model
-        # self.lenetModel.save(self.train_model_path)
-        # todo: include validation set , early stopping when validation accuracy and training accuracy close
-        # https://chrisalbon.com/deep_learning/keras/neural_network_early_stopping/
+        self.trainMonitTool.visualizeTrain(history)
 
 
     # keras test example: https://github.com/EN10/KerasMNIST/blob/master/TFKpredict.py
@@ -115,12 +110,12 @@ def main():
     data_dir = '../traffic-signs-data/'
     visualize_dir =  '../visualize/'
     test_data_dir = '../traffic-signs-data/googleImg/'
-    model_path = 'trafficSign.h5'
+    model_path = 'trafficSign_model.h5'
     test_labels = [34, 25, 3, 14, 13]
     traffic_sign_pipeline = Pipeline(data_dir, visualize_dir, train_model_path= model_path, test_model_path= model_path)
     traffic_sign_pipeline.exploreDataset()
-    # traffic_sign_pipeline.buildNetwork()
-    # traffic_sign_pipeline.train()
+    traffic_sign_pipeline.buildNetwork()
+    traffic_sign_pipeline.train()
     traffic_sign_pipeline.test(test_data_dir, test_labels)
 
 
