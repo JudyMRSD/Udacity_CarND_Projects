@@ -33,7 +33,8 @@ class ImagePreprocess:
     def plot_channel_thresh(self, img, img_channel_names, img_channel_list, thresh_list):
         fig, ax = plt.subplots(2, len(img_channel_list))
         for i, channel in enumerate(img_channel_list):
-            ret, channel_binary = cv2.threshold(channel, thresh_list[i][1], thresh_list[i][1], cv2.THRESH_BINARY)
+            print("thresh_list[i][1], thresh_list[i][1]", thresh_list[i][0], thresh_list[i][1])
+            ret, channel_binary = cv2.threshold(channel, thresh_list[i][0], thresh_list[i][1], cv2.THRESH_BINARY)
             ax[0][i].imshow(channel_binary, cmap='gray')
             ax[0][i].set_title(img_channel_names[i])
             channel_binary_mask = cv2.cvtColor(channel_binary, cv2.COLOR_GRAY2BGR)
@@ -64,12 +65,10 @@ class ImagePreprocess:
         thresh_list = [(180, 255), (200, 255), (90, 255), (70, 255)]
         self.plot_channel_thresh(img, img_channel_names, img_channel_list, thresh_list)
 
-
-
 def main():
     imgProcessor = ImagePreprocess()
-    input_img = '../output_images/test_image_out/test2_undist.jpg'
-
+    # input_img = '../output_images/test_image_out/test2_undist.jpg'
+    input_img = '../test_images/test1.jpg'
     print("binary")
     #imgProcessor.binary_HSV(input_img)
     #imgProcessor.binary_HLS(input_img)
