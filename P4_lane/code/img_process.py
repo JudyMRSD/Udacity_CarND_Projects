@@ -64,40 +64,44 @@ class Image_Process:
         self.hls_thresh()
         # Stack each channel to view their individual contributions in green and blue respectively
         # This returns a stack of the two binary images, whose components you can see as different colors
-        color_binary = np.dstack((self.l_binary, self.sxbinary, self.s_binary)) * 255
-        color_binary= color_binary.astype(np.uint8)
+        self.color_binary = np.dstack((self.l_binary, self.sxbinary, self.s_binary)) * 255
+        self.color_binary= self.color_binary.astype(np.uint8)
 
+
+
+    def combine_thresh(self):
         # Combine the all the binary thresholds
-        combined_binary = np.zeros_like(self.sxbinary)
-        combined_binary[(self.s_binary == 1) | (self.sxbinary == 1)] = 1
-
-        combined_binary_l = np.zeros_like(self.sxbinary)
-        combined_binary_l[(self.s_binary == 1) & (self.l_binary == 1) | (self.sxbinary == 1)] = 1
+        self.combined_binary = np.zeros_like(self.sxbinary)
+        self.combined_binary[(self.s_binary == 1) & (self.l_binary == 1) | (self.sxbinary == 1)] = 1
 
         kernel = np.ones((5, 5), np.uint8)
-        closing = cv2.morphologyEx(combined_binary.astype(np.uint8), cv2.MORPH_CLOSE, kernel)
+        self.closing = cv2.morphologyEx(self.combined_binary.astype(np.uint8), cv2.MORPH_CLOSE, kernel)
 
-        return color_binary, closing
 
     def visualize(self):
 
         # Plotting thresholded images
-        f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20, 10))
+        f, ax = plt.subplots(2, 3, figsize=(20, 10))
         plt.tight_layout()
 
-        color_binary, closing = self.stack_channel(sobel_flag=True, hls_saturation_flag=False, hls_lightness_flag=False)
-        ax1.set_title('sobel thresholds')
+        self.stack_channel(sobel_flag=True, hls_saturation_flag=False, hls_lightness_flag=False)
+        ax[0][0].set_title('sobel thresholds')
+        ax[0][0].imshow(self.color_binary)
+        self.stack_channel(sobel_flag=False, hls_saturation_flag=True, hls_lightness_flag=False)
+        ax[0][1].set_title('hls saturation channel thresholds')
+        ax[0][1].imshow(self.color_binary)
+        self.stack_channel(sobel_flag=False, hls_saturation_flag=False, hls_lightness_flag=True)
+        ax[0][2].set_title('hls lightness channel thresholds')
+        ax[0][2].imshow(self.color_binary)
+        self.stack_channel(sobel_flag=True, hls_saturation_flag=True, hls_lightness_flag=True)
+        ax[1][0].set_title('stacked channels')  # remove effects from shadow
+        ax[1][0].imshow(self.color_binary, cmap='gray')
 
-        ax1.imshow(color_binary)
-        color_binary, closing = self.stack_channel(sobel_flag=False, hls_saturation_flag=True, hls_lightness_flag=False)
-        ax2.set_title('hls saturation channel thresholds')
-        ax2.imshow(color_binary)
-        color_binary, closing = self.stack_channel(sobel_flag=False, hls_saturation_flag=False, hls_lightness_flag=True)
-        ax3.set_title('hls lightness channel thresholds')
-        ax3.imshow(color_binary)
-        color_binary, closing = self.stack_channel(sobel_flag=True, hls_saturation_flag=True, hls_lightness_flag=True)
-        ax4.set_title('l binary thresholds')  # remove effects from shadow
-        ax4.imshow(color_binary)
+        self.combine_thresh()
+        ax[1][1].set_title('combined binary')  # remove effects from shadow
+        ax[1][1].imshow(self.combined_binary)
+        ax[1][2].set_title('after closing')  # remove effects from shadow
+        ax[1][2].imshow(self.closing, cmap='gray')
 
         plt.savefig(self.outdir + self.base + "channels.jpg")
 def main():
