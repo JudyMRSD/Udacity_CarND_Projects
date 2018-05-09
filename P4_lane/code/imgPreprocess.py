@@ -1,4 +1,5 @@
 import cv2
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -8,10 +9,12 @@ class ImagePreprocess:
     def __init__(self):
         self.a = 0
 
-    def plot_channels(self, color_space_imgs, color_space_list):
+    def plot_channels(self, base, color_space_imgs, color_space_list):
 
         plt.close('all')
-        fig, ax = plt.subplots(len(color_space_list),3)
+        fig, ax = plt.subplots(len(color_space_list),3, figsize=(16, 9))
+        plt.tight_layout()
+
         for i, color_space in enumerate(color_space_list):
             img = color_space_imgs[i]
             print("img.shape", img.shape)
@@ -27,51 +30,55 @@ class ImagePreprocess:
                     channel = img[:,:,j]
                     ax[i][j].imshow(channel, cmap = 'gray')
                     ax[i][j].set_title(color_space+", channel = " + channel_names[j])
-        plt.savefig(out_dir +"channels.jpg")
+        plt.savefig(out_dir + base+"channels.jpg")
 
     # overlay binary mask on original image
-    def plot_channel_thresh(self, img, img_channel_names, img_channel_list, thresh_list):
-        fig, ax = plt.subplots(2, len(img_channel_list))
+    def plot_channel_thresh(self, base, img_channel_names, img_channel_list, thresh_list):
+        fig, ax = plt.subplots(2, len(img_channel_list), figsize=(16, 9))
+
         for i, channel in enumerate(img_channel_list):
             print("thresh_list[i][1], thresh_list[i][1]", thresh_list[i][0], thresh_list[i][1])
             ret, channel_binary = cv2.threshold(channel, thresh_list[i][0], thresh_list[i][1], cv2.THRESH_BINARY)
-            ax[0][i].imshow(channel_binary, cmap='gray')
-            ax[0][i].set_title(img_channel_names[i])
-            channel_binary_mask = cv2.cvtColor(channel_binary, cv2.COLOR_GRAY2BGR)
-            overlay = cv2.bitwise_and(img, channel_binary_mask)
-            ax[1][i].imshow(overlay)
-            ax[1][i].set_title(img_channel_names[i])
 
-        plt.savefig(out_dir + "thresh.jpg")
+            ax[0][i].imshow(channel, cmap='gray')
+            ax[0][i].set_title(img_channel_names[i])
+
+            ax[1][i].imshow(channel_binary, cmap='gray')
+            ax[1][i].set_title("thresh " +img_channel_names[i])
+
+
+        plt.savefig(out_dir + base+"thresh.jpg")
 
 
     def all_color_spaces(self, input_img_path):
-        color_space_list = ['HLS', 'HVS', 'RGB', 'gray']
+        color_space_list = ['HLS', 'HVS', 'BGR', 'gray']
+
+        base = os.path.basename(input_img_path)
+        base = os.path.splitext(base)[0]
 
         img = cv2.imread(input_img_path)
-        hsl_img = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
+        hls_img = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
         hsv_img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-        rgb_img = img
+        brg_img = img
         gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        color_space_imgs = [hsl_img, hsv_img, rgb_img, gray_img]
-        self.plot_channels(color_space_imgs, color_space_list)
+        color_space_imgs = [hls_img, hsv_img, brg_img, gray_img]
+        self.plot_channels(base, color_space_imgs, color_space_list)
 
-        rgb_r = rgb_img[:,:,0]
-        hvs_s = hsv_img[:,:,2]
-        hsl_s = hsl_img[:,:,1]
+        bgr_r = brg_img[:,:,2] # opencv is in bgr order
+        hsv_s = hsv_img[:,:,1]
+        hls_s = hls_img[:,:,2]
 
-        img_channel_names = ["gray", "R in RGB", "S in HSV","S in HSL"]
-        img_channel_list = [gray_img, rgb_r, hvs_s, hsl_s]
+        img_channel_names = ["gray", "R in RGB", "S in HSV","S in HLS"]
+        img_channel_list = [gray_img, bgr_r, hsv_s, hls_s]
         thresh_list = [(180, 255), (200, 255), (90, 255), (70, 255)]
-        self.plot_channel_thresh(img, img_channel_names, img_channel_list, thresh_list)
+        self.plot_channel_thresh(base, img_channel_names, img_channel_list, thresh_list)
 
 def main():
     imgProcessor = ImagePreprocess()
-    # input_img = '../output_images/test_image_out/test2_undist.jpg'
-    input_img = '../test_images/test1.jpg'
-    print("binary")
-    #imgProcessor.binary_HSV(input_img)
-    #imgProcessor.binary_HLS(input_img)
+    input_img = '../test_images/test6.jpg'
+    imgProcessor.all_color_spaces(input_img)
+
+    input_img = '../test_images/test4.jpg'
     imgProcessor.all_color_spaces(input_img)
 
 if __name__ == "__main__":
