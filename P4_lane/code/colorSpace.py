@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 out_dir = "../output_images/thresh_out/"
-class ImagePreprocess:
+class ColorSpace:
     def __init__(self):
         self.a = 0
 
@@ -74,12 +74,12 @@ class ImagePreprocess:
         self.plot_channel_thresh(base, img_channel_names, img_channel_list, thresh_list)
 
 def main():
-    imgProcessor = ImagePreprocess()
+    colorSpace_test = ColorSpace()
     input_img = '../test_images/test6.jpg'
-    imgProcessor.all_color_spaces(input_img)
+    colorSpace_test.all_color_spaces(input_img)
 
     input_img = '../test_images/test4.jpg'
-    imgProcessor.all_color_spaces(input_img)
+    colorSpace_test.all_color_spaces(input_img)
 
 if __name__ == "__main__":
     main()
