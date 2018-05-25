@@ -4,7 +4,6 @@ from perspective_transform import Perspective
 import os
 import numpy as np
 import cv2
-
 import matplotlib.image as mpimg
 
 
@@ -57,12 +56,11 @@ def main():
                       [0, h],
                       [0, 0],
                       [w, 0]])
+    binary_front_img = cv2.cvtColor(binary_front_img, cv2.COLOR_GRAY2BGR)
 
     birdeye_img, to_bird_matrix, to_front_matrix = perspective_tool.warp_front_to_birdeye(src, dst,
                                                                                           binary_front_img,
                                                                                           verbose=True)
-    cv2.imwrite(outdir +"birdeye_img.jpg", birdeye_img)
-    # binary_front_img =
 
     # plot the 4 lines on original image
     # plot warp the image with lines plotted on it
