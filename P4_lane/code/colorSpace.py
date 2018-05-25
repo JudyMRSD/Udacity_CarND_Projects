@@ -57,6 +57,8 @@ class ColorSpace:
         base = os.path.splitext(base)[0]
 
         img = cv2.imread(input_img_path)
+        if (img is None):
+            print("bug: invalid image path")
         hls_img = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
         hsv_img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         brg_img = img
@@ -75,11 +77,15 @@ class ColorSpace:
 
 def main():
     colorSpace_test = ColorSpace()
-    input_img = '../test_images/test6.jpg'
+    # input_img = '../test_images/test6.jpg'
+    # colorSpace_test.all_color_spaces(input_img)
+
+    # input_img = '../test_images/test4.jpg'
+    # colorSpace_test.all_color_spaces(input_img)
+
+    input_img = '../test_images/test5.jpg'
     colorSpace_test.all_color_spaces(input_img)
 
-    input_img = '../test_images/test4.jpg'
-    colorSpace_test.all_color_spaces(input_img)
 
 if __name__ == "__main__":
     main()

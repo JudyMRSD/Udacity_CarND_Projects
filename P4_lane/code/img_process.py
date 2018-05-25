@@ -1,3 +1,5 @@
+# adapted from Udacity course sample code section for color and graident
+# Use color transforms, gradients, etc., to create a thresholded binary image.
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -11,7 +13,6 @@ class Image_Process:
 
     def sobel_thresh(self):
         if (self.sobel_flag == True):
-            print("sobel")
             # Grayscale image
             # NOTE: we already saw that standard grayscaling lost color information for the lane lines
             # Explore gradients in other colors spaces / color channels to see what might work better
@@ -79,6 +80,7 @@ class Image_Process:
 
 
     def visualize(self):
+        print("visualize")
 
         # Plotting thresholded images
         f, ax = plt.subplots(2, 3, figsize=(20, 10))
@@ -102,9 +104,10 @@ class Image_Process:
         ax[1][1].imshow(self.combined_binary)
         ax[1][2].set_title('after closing')  # remove effects from shadow
         ax[1][2].imshow(self.closing, cmap='gray')
-
         plt.savefig(self.outdir + self.base + "channels.jpg")
+
 def main():
+    print("main")
     outdir = '../output_images/thresh_out/'
     input_img_path='../test_images/test5.jpg'
     image = mpimg.imread(input_img_path)
