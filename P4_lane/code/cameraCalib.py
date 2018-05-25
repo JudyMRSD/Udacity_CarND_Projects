@@ -84,7 +84,7 @@ class CameraCalibration:
         # cv2.undistort(src, cameraMatrix, distCoeffs[, dst[, newCameraMatrix]]) → dst
         dst = cv2.undistort(img, mtx, dist, None, mtx)
         cv2.imwrite(output_test,dst)
-
+        return dst
         #dst = cv2.cvtColor(dst, cv2.COLOR_BGR2RGB)
         # Visualize undistortion
         # f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10))

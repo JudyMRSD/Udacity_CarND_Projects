@@ -6,11 +6,8 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import os
 class Image_Process:
-    def __init__(self, outdir, base, img):
-        self.outdir = outdir
-        self.base = base
-        self.img = img
-
+    def __init__(self):
+        self.a = 0
     def sobel_thresh(self):
         if (self.sobel_flag == True):
             # Grayscale image
@@ -79,7 +76,8 @@ class Image_Process:
         self.closing = cv2.morphologyEx(self.combined_binary.astype(np.uint8), cv2.MORPH_CLOSE, kernel)
 
 
-    def visualize(self):
+    def visualize(self, img, outdir=None, base=None):
+        self.img = img
         print("visualize")
 
         # Plotting thresholded images
@@ -103,8 +101,14 @@ class Image_Process:
         ax[1][1].set_title('combined binary')  # remove effects from shadow
         ax[1][1].imshow(self.combined_binary)
         ax[1][2].set_title('after closing')  # remove effects from shadow
+        self.closing *= 255
         ax[1][2].imshow(self.closing, cmap='gray')
-        plt.savefig(self.outdir + self.base + "channels.jpg")
+
+        # plt.show()
+        # cv2.imshow("self.closing", self.closing*255)
+        # cv2.waitKey(0)
+        if (outdir is not None) and (base is not None):
+            plt.savefig(outdir + base + "channels.jpg")
 
 def main():
     print("main")
@@ -114,8 +118,8 @@ def main():
     base = os.path.basename(input_img_path)
     base = os.path.splitext(base)[0]
 
-    pipeline = Image_Process(outdir, base, image)
-    pipeline.visualize()
+    pipeline = Image_Process()
+    pipeline.visualize(image, outdir, base)
 
 if __name__ == "__main__":
     main()
