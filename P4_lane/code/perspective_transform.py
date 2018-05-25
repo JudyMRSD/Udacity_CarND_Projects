@@ -10,14 +10,14 @@ class Perspective():
         to_bird_matrix = cv2.getPerspectiveTransform(src, dst)
         to_front_matrix = cv2.getPerspectiveTransform(dst, src)
         birdeye_img = cv2.warpPerspective(front_img, to_bird_matrix, (w, h))
-        cv2.imwrite("../output_images/birdeye.jpg", birdeye_img)
+        cv2.imwrite("../output_images/birdeye/birdeye.jpg", birdeye_img)
         if verbose is True:
             front_pts = src.reshape(-1, 1, 2).astype(int)
             front_lines = cv2.polylines(front_img, [front_pts], color=(0, 255, 0), thickness=5, isClosed=True)
-            cv2.imwrite("../output_images/lines_front.jpg", front_lines)
+            cv2.imwrite("../output_images/birdeye/lines_front.jpg", front_lines)
             birdeye_pts = dst.reshape(-1, 1, 2).astype(int)
             birdeye_lines = cv2.polylines(birdeye_img, [birdeye_pts], color=(0, 255, 0), thickness=5, isClosed=True)
-            cv2.imwrite("../output_images/lines_birdeye.jpg", birdeye_lines)
+            cv2.imwrite("../output_images/birdeye/lines_birdeye.jpg", birdeye_lines)
         return birdeye_img, to_bird_matrix, to_front_matrix
 
 def main():

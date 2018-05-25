@@ -37,6 +37,7 @@ def main():
     pipeline.visualize(undistort_front)
 
     binary_front_img = pipeline.closing
+    print("img shape" , binary_front_img.shape)
     cv2.imwrite(outdir + "binary_front_img.jpg", binary_front_img)
 
 
@@ -56,6 +57,7 @@ def main():
                       [0, h],
                       [0, 0],
                       [w, 0]])
+
     binary_front_img = cv2.cvtColor(binary_front_img, cv2.COLOR_GRAY2BGR)
 
     birdeye_img, to_bird_matrix, to_front_matrix = perspective_tool.warp_front_to_birdeye(src, dst,
