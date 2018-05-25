@@ -34,8 +34,8 @@ class Boundary():
         window_height = np.int(self.img_h // nwindows)
         # Identify the x and y positions of all nonzero pixels in the image
         nonzero = self.img.nonzero()
-        self.nonzeroy = np.array(nonzero[0]) # y coordinate of non zero pixel
-        self.nonzerox = np.array(nonzero[1]) # x coordinate of non zero pixel
+        self.nonzeroy = np.array(nonzero[0]) # y coordinate of non zero pixel (row)
+        self.nonzerox = np.array(nonzero[1]) # x coordinate of non zero pixel  (col)
         # Current positions to be updated for each window
         leftx_current = self.leftx_base
         rightx_current = self.rightx_base
@@ -92,10 +92,14 @@ class Boundary():
         righty = self.nonzeroy[self.right_lane_inds]
 
         # Fit a second order polynomial to each
+        # use function x(y) instead of y(x) since polyfit needs input x, y in increasing order
+        # treat x as vertical axis and y as horizontal axis ensures both vertical and horizontal axis are in increasing order
+        # see writeup images
         self.left_fit = np.polyfit(lefty, leftx, 2)
         self.right_fit = np.polyfit(righty, rightx, 2)
 
-    def visualize(self):
+
+    def visualize(self, outdir):
         # Generate x and y values for plotting
 
         ploty = np.linspace(0, self.img_h - 1, self.img_h)
@@ -108,23 +112,7 @@ class Boundary():
         plt.plot(right_fitx, ploty, color='yellow')
         plt.xlim(0, 1280)
         plt.ylim(720, 0)
-        plt.show()
-
-
-        # plotx = np.linspace(0, self.img_w - 1, self.img_w)
-        # # x = a * y ^2 + b * y + c
-        # left_fity = self.left_fit[0] * plotx ** 2 + self.left_fit[1] * plotx + self.left_fit[2]
-        # right_fity = self.right_fit[0] * plotx ** 2 + self.right_fit[1] * plotx + self.right_fit[2]
-        # # self.left_fit_poly = np.poly1d(self.left_fit)
-        #
-        # self.out_img[self.nonzeroy[self.left_lane_inds], self.nonzerox[self.left_lane_inds]] = [255, 0, 0]
-        # self.out_img[self.nonzeroy[self.right_lane_inds], self.nonzerox[self.right_lane_inds]] = [0, 0, 255]
-        # # plt.plot(plotx, self.left_fit_poly(plotx), color='yellow')
-        # plt.plot(plotx, left_fity,  color='yellow')
-        # plt.plot(plotx, right_fity, color='yellow')
-        # plt.xlim(0, 1280)
-        # plt.ylim(720, 0)
-        # plt.show()
+        plt.savefig(outdir + "slidingwindow.jpg")
 
 
 def main():
@@ -135,7 +123,7 @@ def main():
     boundaryTool = Boundary()
     boundaryTool.histogram_peaks(outdir, binary_warped)
     boundaryTool.slid_window()
-    boundaryTool.visualize()
+    boundaryTool.visualize(outdir)
 
 if __name__ == "__main__":
     main()
