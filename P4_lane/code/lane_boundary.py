@@ -86,17 +86,17 @@ class Boundary():
         self.right_lane_inds = np.concatenate(self.right_lane_inds)
 
         # Extract left and right line pixel positions
-        leftx = self.nonzerox[self.left_lane_inds]
-        lefty = self.nonzeroy[self.left_lane_inds]
-        rightx = self.nonzerox[self.right_lane_inds]
-        righty = self.nonzeroy[self.right_lane_inds]
+        self.leftx = self.nonzerox[self.left_lane_inds]
+        self.lefty = self.nonzeroy[self.left_lane_inds]
+        self.rightx = self.nonzerox[self.right_lane_inds]
+        self.righty = self.nonzeroy[self.right_lane_inds]
 
         # Fit a second order polynomial to each
         # use function x(y) instead of y(x) since polyfit needs input x, y in increasing order
         # treat x as vertical axis and y as horizontal axis ensures both vertical and horizontal axis are in increasing order
         # see writeup images
-        self.left_fit = np.polyfit(lefty, leftx, 2)
-        self.right_fit = np.polyfit(righty, rightx, 2)
+        self.left_fit = np.polyfit(self.lefty, self.leftx, 2)
+        self.right_fit = np.polyfit(self.righty, self.rightx, 2)
 
 
     def visualize(self, outdir):
@@ -154,9 +154,10 @@ class Boundary():
         # And recast the x and y points into usable format for cv2.fillPoly()
         left_line_window1 = np.array([np.transpose(np.vstack([self.left_fitx - self.margin, self.ploty]))])
         # flip the points on the right edge of the left traffic lane, so the points are ordered for fillPoly
-        # 1  6
-        # 2  5
-        # 3  4
+        # 1              6
+        # 2              5
+        # 3              4
+        # window 1    window 2
         left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([self.left_fitx + self.margin,
                                                                         self.ploty])))])
         left_line_pts = np.hstack((left_line_window1, left_line_window2))
@@ -176,6 +177,32 @@ class Boundary():
         plt.ylim(720, 0)
         plt.savefig(outdir + "nextframe.jpg")
 
+    def calc_curvature(self, y):
+        # value taken from Udacity course
+        # Define conversions in x and y from pixels space to meters
+        ym_per_pix = 30 / 720  # meters per pixel in y dimension
+        self.xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
+        # Fit new polynomials to x,y in world space
+        left_fit_cr = np.polyfit(self.lefty * ym_per_pix, self.leftx * self.xm_per_pix, 2)
+        right_fit_cr = np.polyfit(self.righty * ym_per_pix, self.rightx * self.xm_per_pix, 2)
+        # Calculate the new radii of curvature a particular y coordinate
+        left_curverad = ((1 + (2 * left_fit_cr[0] * y * ym_per_pix + left_fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * left_fit_cr[0])
+        right_curverad = ((1 + (2 * right_fit_cr[0] * y * ym_per_pix + right_fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * right_fit_cr[0])
+        # Now our radius of curvature is in meters
+        print(left_curverad, 'm', right_curverad, 'm')
+
+    def calc_dist_center(self):
+        # assume center of image is along the center line of vehicle
+        center_car_x = int(self.img_w / 2)
+        # only take the x value for the left and right line polynomial towards bottom of frame
+        center_lane_x = int((self.left_fitx[-1]  + self.right_fitx[-1])/2)
+        dist = (center_lane_x - center_car_x) * self.xm_per_pix
+        print("dist ", dist)
+        return dist
+
+
+
+
 
 def main():
     fname = "../test_images/birdeye.jpg"
@@ -188,7 +215,8 @@ def main():
     boundaryTool.visualize(outdir)
     boundaryTool.fit_use_prev(binary_warped)
     boundaryTool.visualize_fit_prev(outdir)
-
+    boundaryTool.calc_curvature(boundaryTool.img_h-10)
+    boundaryTool.calc_dist_center()
 
 
 if __name__ == "__main__":
