@@ -103,16 +103,78 @@ class Boundary():
         # Generate x and y values for plotting
 
         ploty = np.linspace(0, self.img_h - 1, self.img_h)
-        left_fitx = self.left_fit[0] * ploty ** 2 + self.left_fit[1] * ploty + self.left_fit[2]
-        right_fitx = self.right_fit[0] * ploty ** 2 + self.right_fit[1] * ploty + self.right_fit[2]
+        self.left_fitx = self.left_fit[0] * ploty ** 2 + self.left_fit[1] * ploty + self.left_fit[2]
+        self.right_fitx = self.right_fit[0] * ploty ** 2 + self.right_fit[1] * ploty + self.right_fit[2]
         self.out_img[self.nonzeroy[self.left_lane_inds], self.nonzerox[self.left_lane_inds]] = [255, 0, 0]
         self.out_img[self.nonzeroy[self.right_lane_inds], self.nonzerox[self.right_lane_inds]] = [0, 0, 255]
         plt.imshow(self.out_img)
-        plt.plot(left_fitx, ploty, color='yellow')
-        plt.plot(right_fitx, ploty, color='yellow')
+        plt.plot(self.left_fitx, ploty, color='yellow')
+        plt.plot(self.right_fitx, ploty, color='yellow')
         plt.xlim(0, 1280)
         plt.ylim(720, 0)
         plt.savefig(outdir + "slidingwindow.jpg")
+        plt.close()
+
+    def fit_use_prev(self, binary_warped):
+        # Assume you now have a new warped binary image
+        # from the next frame of video (also called "binary_warped")
+        # You don't need to do a blind search again, but instead you can just search
+        # in a margin around the previous line position l
+        nonzero = binary_warped.nonzero()
+        nonzeroy = np.array(nonzero[0])
+        nonzerox = np.array(nonzero[1])
+        self.margin = 100
+
+        left_x = self.left_fit[0] * (nonzeroy ** 2) + self.left_fit[1] * nonzeroy + self.left_fit[2]
+        right_x = self.right_fit[0] * (nonzeroy ** 2) + self.right_fit[1] * nonzeroy + self.right_fit[2]
+        left_lane_inds = ((nonzerox > left_x - self.margin) & (nonzerox < left_x + self.margin))
+        right_lane_inds = ((nonzerox > (right_x - self.margin)) & (nonzerox < right_x + self.margin))
+
+        # Again, extract left and right line pixel positions
+        leftx = nonzerox[left_lane_inds]
+        lefty = nonzeroy[left_lane_inds]
+        rightx = nonzerox[right_lane_inds]
+        righty = nonzeroy[right_lane_inds]
+        # Fit a second order polynomial to each
+        self.left_fit = np.polyfit(lefty, leftx, 2)
+        self.right_fit = np.polyfit(righty, rightx, 2)
+        # Generate x and y values for plotting
+        self.ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
+        self.left_fitx = self.left_fit[0] * self.ploty ** 2 + self.left_fit[1] * self.ploty + self.left_fit[2]
+        self.right_fitx = self.right_fit[0] * self.ploty ** 2 + self.right_fit[1] * self.ploty + self.right_fit[2]
+
+    def visualize_fit_prev(self, outdir):
+        print("visualize fit prev")
+        window_img = np.zeros_like(self.out_img)
+        # Color in left and right line pixels
+        self.out_img[self.nonzeroy[self.left_lane_inds], self.nonzerox[self.left_lane_inds]] = [255, 0, 0]
+        self.out_img[self.nonzeroy[self.right_lane_inds], self.nonzerox[self.right_lane_inds]] = [0, 0, 255]
+
+        # Generate a polygon to illustrate the search window area
+        # And recast the x and y points into usable format for cv2.fillPoly()
+        left_line_window1 = np.array([np.transpose(np.vstack([self.left_fitx - self.margin, self.ploty]))])
+        # flip the points on the right edge of the left traffic lane, so the points are ordered for fillPoly
+        # 1  6
+        # 2  5
+        # 3  4
+        left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([self.left_fitx + self.margin,
+                                                                        self.ploty])))])
+        left_line_pts = np.hstack((left_line_window1, left_line_window2))
+        right_line_window1 = np.array([np.transpose(np.vstack([self.right_fitx - self.margin, self.ploty]))])
+        right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([self.right_fitx + self.margin,
+                                                                         self.ploty])))])
+        right_line_pts = np.hstack((right_line_window1, right_line_window2))
+
+        # Draw the lane onto the warped blank image
+        cv2.fillPoly(window_img, np.int_([left_line_pts]), (0, 255, 0))
+        cv2.fillPoly(window_img, np.int_([right_line_pts]), (0, 255, 0))
+        result = cv2.addWeighted(self.out_img, 1, window_img, 0.3, 0)
+        plt.imshow(result)
+        plt.plot(self.left_fitx, self.ploty, color='yellow')
+        plt.plot(self.right_fitx, self.ploty, color='yellow')
+        plt.xlim(0, 1280)
+        plt.ylim(720, 0)
+        plt.savefig(outdir + "nextframe.jpg")
 
 
 def main():
@@ -124,6 +186,10 @@ def main():
     boundaryTool.histogram_peaks(outdir, binary_warped)
     boundaryTool.slid_window()
     boundaryTool.visualize(outdir)
+    boundaryTool.fit_use_prev(binary_warped)
+    boundaryTool.visualize_fit_prev(outdir)
+
+
 
 if __name__ == "__main__":
     main()
