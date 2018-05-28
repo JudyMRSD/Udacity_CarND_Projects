@@ -1,7 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-
+from perspective_transform import Perspective
 
 # Used code from Udacity online course 18 :  Detect lane pixels and fit to find the lane boundary
 class Boundary():
@@ -101,15 +101,14 @@ class Boundary():
 
     def visualize(self, outdir):
         # Generate x and y values for plotting
-
-        ploty = np.linspace(0, self.img_h - 1, self.img_h)
-        self.left_fitx = self.left_fit[0] * ploty ** 2 + self.left_fit[1] * ploty + self.left_fit[2]
-        self.right_fitx = self.right_fit[0] * ploty ** 2 + self.right_fit[1] * ploty + self.right_fit[2]
+        self.ploty = np.linspace(0, self.img_h - 1, self.img_h)
+        self.left_fitx = self.left_fit[0] * self.ploty ** 2 + self.left_fit[1] * self.ploty + self.left_fit[2]
+        self.right_fitx = self.right_fit[0] * self.ploty ** 2 + self.right_fit[1] * self.ploty + self.right_fit[2]
         self.out_img[self.nonzeroy[self.left_lane_inds], self.nonzerox[self.left_lane_inds]] = [255, 0, 0]
         self.out_img[self.nonzeroy[self.right_lane_inds], self.nonzerox[self.right_lane_inds]] = [0, 0, 255]
         plt.imshow(self.out_img)
-        plt.plot(self.left_fitx, ploty, color='yellow')
-        plt.plot(self.right_fitx, ploty, color='yellow')
+        plt.plot(self.left_fitx, self.ploty, color='yellow')
+        plt.plot(self.right_fitx, self.ploty, color='yellow')
         plt.xlim(0, 1280)
         plt.ylim(720, 0)
         plt.savefig(outdir + "slidingwindow.jpg")
@@ -143,6 +142,20 @@ class Boundary():
         self.left_fitx = self.left_fit[0] * self.ploty ** 2 + self.left_fit[1] * self.ploty + self.left_fit[2]
         self.right_fitx = self.right_fit[0] * self.ploty ** 2 + self.right_fit[1] * self.ploty + self.right_fit[2]
 
+    @staticmethod
+    def polynomial_to_points(x, y, margin):
+        left_vertices = np.array([np.transpose(np.vstack([x - margin, y]))]).astype(int)
+        # flip the points on the right edge of the left traffic lane, so the points are ordered for fillPoly
+        # 1              6
+        # 2              5
+        # 3              4
+        # window    window 2
+        right_vertices = np.array([np.flipud(np.transpose(np.vstack([x + margin, y])))]).astype(int)
+        pts = np.hstack((left_vertices, right_vertices)).astype(int)
+        return pts,left_vertices, right_vertices
+
+
+
     def visualize_fit_prev(self, outdir):
         print("visualize fit prev")
         window_img = np.zeros_like(self.out_img)
@@ -152,19 +165,8 @@ class Boundary():
 
         # Generate a polygon to illustrate the search window area
         # And recast the x and y points into usable format for cv2.fillPoly()
-        left_line_window1 = np.array([np.transpose(np.vstack([self.left_fitx - self.margin, self.ploty]))])
-        # flip the points on the right edge of the left traffic lane, so the points are ordered for fillPoly
-        # 1              6
-        # 2              5
-        # 3              4
-        # window 1    window 2
-        left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([self.left_fitx + self.margin,
-                                                                        self.ploty])))])
-        left_line_pts = np.hstack((left_line_window1, left_line_window2))
-        right_line_window1 = np.array([np.transpose(np.vstack([self.right_fitx - self.margin, self.ploty]))])
-        right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([self.right_fitx + self.margin,
-                                                                         self.ploty])))])
-        right_line_pts = np.hstack((right_line_window1, right_line_window2))
+        left_line_pts, _, _ = self.polynomial_to_points(self.left_fitx , self.ploty, self.margin)
+        right_line_pts, _, _ = self.polynomial_to_points(self.right_fitx , self.ploty, self.margin)
 
         # Draw the lane onto the warped blank image
         cv2.fillPoly(window_img, np.int_([left_line_pts]), (0, 255, 0))
@@ -200,15 +202,50 @@ class Boundary():
         print("dist ", dist)
         return dist
 
-
+    def visualize_lane(self, outdir, color_birdeye, original_img, to_front_matrix, blend_alpha = 0.5):
+        # input: 3 channel warped image
+        color_birdeye_mask = np.zeros_like(color_birdeye)
+        # todo: use polynomial_to_points
+        pts, left_vertices, right_vertices = self.polynomial_to_points(self.left_fitx, self.right_fitx, self.margin)
+        # draw lane boundaries on the warped imagely
+        cv2.fillPoly(color_birdeye_mask, [pts], (0,255,0))
+        cv2.polylines(color_birdeye_mask, [left_vertices], isClosed = False, color =  (255, 0,0), thickness = 10)
+        cv2.polylines(color_birdeye_mask, [right_vertices], isClosed = False, color =  (0, 0, 255), thickness = 10)
+        # Idea taken from https://github.com/jeremy-shannon/CarND-Advanced-Lane-Lines/blob/master/project.ipynb
+        # warp the mask back to original image (fornt view)
+        color_front_mask = cv2.warpPerspective(color_birdeye_mask,to_front_matrix , (self.img_w, self.img_h))
+        # blend
+        img_blend = np.zeros_like(original_img)
+        blend_beta = 1- blend_alpha
+        result = cv2.addWeighted(color_front_mask, blend_alpha, original_img, blend_beta, 0.0, img_blend)
+        cv2.imwrite(outdir + "blend.jpg", result)
+        return result
 
 
 
 def main():
+    car_input_test = '../test_images/straight_lines2.jpg'
+    front_img = cv2.imread(car_input_test)
+    perspective_tool = Perspective()
+
+    h, w, _ = front_img.shape
+    src = np.float32([[w, h],
+                      [0, h],
+                      [550, 460],
+                      [730, 460]])
+    dst = np.float32([[w, h],
+                      [0, h],
+                      [0, 0],
+                      [w, 0]])
+    birdeye_img, to_bird_matrix, to_front_matrix = perspective_tool.warp_front_to_birdeye(src, dst, front_img,
+                                                                                          verbose=True)
+    cv2.imwrite("../test_images/birdeye.jpg", birdeye_img)
+
+
     fname = "../test_images/birdeye.jpg"
     outdir = "../output_images/histogram_lane/"
-    img = cv2.imread(fname)
-    binary_warped = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    warped_img = cv2.imread(fname)
+    binary_warped = cv2.cvtColor(warped_img, cv2.COLOR_BGR2GRAY)
     boundaryTool = Boundary()
     boundaryTool.histogram_peaks(outdir, binary_warped)
     boundaryTool.slid_window()
@@ -218,6 +255,8 @@ def main():
     boundaryTool.calc_curvature(boundaryTool.img_h-10)
     boundaryTool.calc_dist_center()
 
+
+    boundaryTool.visualize_lane(outdir, birdeye_img, front_img, to_front_matrix)
 
 if __name__ == "__main__":
     main()
