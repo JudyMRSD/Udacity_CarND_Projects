@@ -99,9 +99,12 @@ class Pipeline:
         # 2. sliding_window
         # 3. refine_bbox
         draw_img = np.copy(img)
-        # img = img.astype(np.float32) / 255
+        img = img.astype(np.float32) / 255
 
         img_tosearch = img[ystart:ystop, :, :]
+
+        cv2.imshow("img_tosearch", img_tosearch)
+        cv2.waitKey(0)
         # ctrans_tosearch = self.util.convert_color(img_tosearch, conv='RGB2YCrCb')
         #if scale != 1:
         #    imshape = ctrans_tosearch.shape
@@ -127,6 +130,9 @@ class Pipeline:
         hog1 = self.util.get_hog_features(ch1, orient, pix_per_cell, cell_per_block, feature_vec=False)
         hog2 = self.util.get_hog_features(ch2, orient, pix_per_cell, cell_per_block, feature_vec=False)
         hog3 = self.util.get_hog_features(ch3, orient, pix_per_cell, cell_per_block, feature_vec=False)
+        print("hog1 shape", hog1.shape)
+        print("hog2 shape", hog2.shape)
+        print("hog3 shape", hog3.shape)
 
         for xb in range(nxsteps):
             for yb in range(nysteps):
@@ -137,7 +143,7 @@ class Pipeline:
                 hog_feat2 = hog2[ypos:ypos + nblocks_per_window, xpos:xpos + nblocks_per_window].ravel()
                 hog_feat3 = hog3[ypos:ypos + nblocks_per_window, xpos:xpos + nblocks_per_window].ravel()
                 hog_features = np.hstack((hog_feat1, hog_feat2, hog_feat3))
-
+                print("hog_features.shape", hog_features.shape)
                 xleft = xpos * pix_per_cell
                 ytop = ypos * pix_per_cell
 

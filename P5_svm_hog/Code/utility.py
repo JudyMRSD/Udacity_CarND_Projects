@@ -64,6 +64,9 @@ class Utility:
             else:
                 feature_image = np.copy(image)
 
+            #cv2.imshow("feature_image", feature_image)
+            #cv2.waitKey(0)
+
             if spatial_feat == True:
                 spatial_features = self.bin_spatial(feature_image, size=spatial_size)
                 file_features.append(spatial_features)
@@ -83,6 +86,7 @@ class Utility:
                 else:
                     hog_features = self.get_hog_features(feature_image[:, :, hog_channel], orient,
                                                     pix_per_cell, cell_per_block, vis=False, feature_vec=True)
+                print("hog_features.shape", hog_features.shape)
                 # Append the new feature vector to the features list
                 file_features.append(hog_features)
             features.append(np.concatenate(file_features))
