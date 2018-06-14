@@ -177,7 +177,7 @@ class Pipeline:
         # pl.train_svm(data_folder)
         ystart = 400
         ystop = 500
-        scale = 1.5
+
         # load a pre-trained svc model from a serialized (pickle) file
         #dist_pickle = pickle.load(open("../Data/svc_pickle.p", "rb"))
         #svc = LinearSVC()
@@ -192,9 +192,11 @@ class Pipeline:
         hist_bins = 32
 
         img = mpimg.imread(image_path)
-        out_img = self.find_cars(img, ystart, ystop, scale, orient, pix_per_cell, cell_per_block,
-                               spatial_size,
-                               hist_bins)
+
+        for scale in np.arange(1.0, 3.0, 0.2):
+            out_img = self.find_cars(img, ystart, ystop, scale, orient, pix_per_cell, cell_per_block,
+                                   spatial_size,
+                                   hist_bins)
         plt.imshow(out_img)
         plt.show()
         # plt.savefig("result.jpg")
