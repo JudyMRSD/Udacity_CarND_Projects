@@ -21,7 +21,6 @@ class Pipeline:
         # 1. prep_feature_dataset (train and test set (HOG features with label))
         # 2. train
         # 3. save model
-
         # Read in cars and notcars
 
         # todo: unify the parameters with the ones used for training svm
@@ -100,17 +99,17 @@ class Pipeline:
         # 2. sliding_window
         # 3. refine_bbox
         draw_img = np.copy(img)
-        img = img.astype(np.float32) / 255
+        # img = img.astype(np.float32) / 255
 
         img_tosearch = img[ystart:ystop, :, :]
-        ctrans_tosearch = self.util.convert_color(img_tosearch, conv='RGB2YCrCb')
-        if scale != 1:
-            imshape = ctrans_tosearch.shape
-            ctrans_tosearch = cv2.resize(ctrans_tosearch, (np.int(imshape[1] / scale), np.int(imshape[0] / scale)))
+        # ctrans_tosearch = self.util.convert_color(img_tosearch, conv='RGB2YCrCb')
+        #if scale != 1:
+        #    imshape = ctrans_tosearch.shape
+        #    ctrans_tosearch = cv2.resize(ctrans_tosearch, (np.int(imshape[1] / scale), np.int(imshape[0] / scale)))
 
-        ch1 = ctrans_tosearch[:, :, 0]
-        ch2 = ctrans_tosearch[:, :, 1]
-        ch3 = ctrans_tosearch[:, :, 2]
+        ch1 = img_tosearch[:, :, 0]
+        ch2 = img_tosearch[:, :, 1]
+        ch3 = img_tosearch[:, :, 2]
 
         # Define blocks and steps as above
         nxblocks = (ch1.shape[1] // pix_per_cell) - cell_per_block + 1
@@ -143,7 +142,7 @@ class Pipeline:
                 ytop = ypos * pix_per_cell
 
                 # Extract the image patch
-                subimg = cv2.resize(ctrans_tosearch[ytop:ytop + window, xleft:xleft + window], (64, 64))
+                subimg = cv2.resize(img_tosearch[ytop:ytop + window, xleft:xleft + window], (64, 64))
 
                 # Get color features
                 spatial_features = self.util.bin_spatial(subimg, size=spatial_size)
@@ -163,8 +162,8 @@ class Pipeline:
                     win_draw = np.int(window * scale)
                     cv2.rectangle(draw_img, (xbox_left, ytop_draw + ystart),
                                   (xbox_left + win_draw, ytop_draw + win_draw + ystart), (0, 0, 255), 6)
-                    cv2.imshow(draw_img)
-                    cv2.waitKey(0)
+        cv2.imshow('detection', draw_img)
+        cv2.waitKey(0)
 
         return draw_img
 
@@ -173,7 +172,7 @@ class Pipeline:
         ystart = 400
         ystop = 500
         scale = 1.5
-        # load a pe-trained svc model from a serialized (pickle) file
+        # load a pre-trained svc model from a serialized (pickle) file
         #dist_pickle = pickle.load(open("../Data/svc_pickle.p", "rb"))
         #svc = LinearSVC()
         #svc_model = pickle.dumps(svc)
