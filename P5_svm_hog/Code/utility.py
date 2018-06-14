@@ -2,6 +2,8 @@ import matplotlib.image as mpimg
 import numpy as np
 import cv2
 from skimage.feature import hog
+from scipy.ndimage.measurements import label
+
 
 class Utility:
     def __init__(self):
@@ -143,10 +145,60 @@ class Utility:
         # subsample a window, pass to SVM, predict label
         pass
 
-    def heat_map(self):
+    def add_heat(self, heatmap, bbox_list):
+        # Iterate through list of bboxes
+        for box in bbox_list:
+            # Add += 1 for all pixels inside each bbox
+            # Assuming each "box" takes the form ((x1, y1), (x2, y2))
+            heatmap[box[0][1]:box[1][1], box[0][0]:box[1][0]] += 1
+
+        # Return updated heatmap
+        return heatmap  # Iterate through list of bboxes
+
+    def apply_threshold(self, heatmap, threshold):
+        # Zero out pixels below the threshold
+        heatmap[heatmap <= threshold] = 0
+        # Return thresholded map
+        return heatmap
+
+    def draw_labeled_bboxes(self, img, labels):
+        # Iterate through all detected cars
+        for car_number in range(1, labels[1] + 1):
+            # Find pixels with each car_number label value
+            nonzero = (labels[0] == car_number).nonzero()
+            # Identify x and y values of those pixels
+            nonzeroy = np.array(nonzero[0])
+            nonzerox = np.array(nonzero[1])
+            # Define a bounding box based on min/max x and y
+            bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
+            # Draw the box on the image
+            cv2.rectangle(img, bbox[0], bbox[1], (0, 0, 255), 6)
+        # Return the image
+        return img
+
+    def heat_map(self, image, box_list):
         # input: image with bbox
         # output: heatmap
-        pass
+        heat = np.zeros_like(image[:, :, 0]).astype(np.float)
+        # Add heat to each box in box list
+        heat = self.add_heat(heat, box_list)
+        cv2.imshow("heat", heat)
+        cv2.waitKey()
+        # Apply threshold to help remove false positives
+        heat = self.apply_threshold(heat, 1)
+        cv2.imshow("heat thresh", heat)
+        cv2.waitKey()
+        # Visualize the heatmap when displaying
+        heatmap = np.clip(heat, 0, 255)
+        cv2.imshow("heatmap clip", heatmap)
+        cv2.waitKey()
+        # Find final boxes from heatmap using label function
+        # Create an image with some features, then label it using the default (cross-shaped) structuring element
+        # (if 2 pixels are connected in vertical or horizontal orientation, they are same object)
+        labels = label(heatmap)
+        draw_img = self.draw_labeled_bboxes(np.copy(image), labels)
+        cv2.imshow("draw_img", draw_img)
+        cv2.waitKey()
 
     def refine_bbox(self):
         # input: image with bbox

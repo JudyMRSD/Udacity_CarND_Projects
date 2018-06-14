@@ -10,6 +10,8 @@ import cv2
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
+# TODO: global variables for svm training and testing parameters
+
 class Pipeline:
     def __init__(self):
         self.util = Utility()
@@ -134,6 +136,8 @@ class Pipeline:
         print("hog2 shape", hog2.shape)
         print("hog3 shape", hog3.shape)
 
+        bbox_list = []
+
         for xb in range(nxsteps):
             for yb in range(nysteps):
                 ypos = yb * cells_per_step
@@ -168,10 +172,12 @@ class Pipeline:
                     win_draw = np.int(window * scale)
                     cv2.rectangle(draw_img, (xbox_left, ytop_draw + ystart),
                                   (xbox_left + win_draw, ytop_draw + win_draw + ystart), (0, 0, 255), 6)
+                    bbox_list.append(((int(xbox_left), int(ytop_draw + ystart)),
+                                      (int(xbox_left + win_draw), int(ytop_draw + win_draw + ystart))))
         cv2.imshow('detection', draw_img)
         cv2.waitKey(0)
 
-        return draw_img
+        return draw_img, bbox_list
 
     def detect_image(self, image_path):
         # pl.train_svm(data_folder)
@@ -192,13 +198,18 @@ class Pipeline:
         hist_bins = 32
 
         img = mpimg.imread(image_path)
-
+        bbox_scale = []
         for scale in np.arange(1.0, 3.0, 0.2):
-            out_img = self.find_cars(img, ystart, ystop, scale, orient, pix_per_cell, cell_per_block,
+            out_img, bbox_list = self.find_cars(img, ystart, ystop, scale, orient, pix_per_cell, cell_per_block,
                                    spatial_size,
                                    hist_bins)
+            print("bbox_list", bbox_list)
+            print("bbox_scale", bbox_scale)
+            bbox_scale.extend(bbox_list)
+
         plt.imshow(out_img)
         plt.show()
+        self.util.heat_map(out_img, bbox_scale)
         # plt.savefig("result.jpg")
 
     def detect_video(self, video_name):
