@@ -32,7 +32,7 @@ class Pipeline:
         sample_size = 500
         cars = cars[0:sample_size]
         notcars = notcars[0:sample_size]
-        color_space = 'RGB'  # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
+        color_space = 'YUV'  # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
         orient = 15  # HOG orientations
         pix_per_cell = 8  # HOG pixels per cell
         cell_per_block = 2  # HOG cells per block
@@ -105,10 +105,10 @@ class Pipeline:
 
         cv2.imshow("img_tosearch", img_tosearch)
         cv2.waitKey(0)
-        # ctrans_tosearch = self.util.convert_color(img_tosearch, conv='RGB2YCrCb')
-        #if scale != 1:
-        #    imshape = ctrans_tosearch.shape
-        #    ctrans_tosearch = cv2.resize(ctrans_tosearch, (np.int(imshape[1] / scale), np.int(imshape[0] / scale)))
+        img_tosearch = self.util.convert_color(img_tosearch, conv='RGB2YUV')
+        if scale != 1:
+            imshape = img_tosearch.shape
+            img_tosearch = cv2.resize(img_tosearch, (np.int(imshape[1] / scale), np.int(imshape[0] / scale)))
 
         ch1 = img_tosearch[:, :, 0]
         ch2 = img_tosearch[:, :, 1]
