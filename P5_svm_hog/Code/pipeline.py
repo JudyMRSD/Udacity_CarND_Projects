@@ -10,7 +10,9 @@ import cv2
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
-# TODO: global variables for svm training and testing parameters
+# TODO: global variables
+# for svm training and testing parameters
+# heatmap parameters
 
 class Pipeline:
     def __init__(self):
@@ -182,7 +184,7 @@ class Pipeline:
     def detect_image(self, image_path):
         # pl.train_svm(data_folder)
         ystart = 400
-        ystop = 500
+        ystop = 600
 
         # load a pre-trained svc model from a serialized (pickle) file
         #dist_pickle = pickle.load(open("../Data/svc_pickle.p", "rb"))
@@ -200,9 +202,8 @@ class Pipeline:
         img = mpimg.imread(image_path)
         bbox_scale = []
         for scale in np.arange(1.0, 3.0, 0.2):
-            out_img, bbox_list = self.find_cars(img, ystart, ystop, scale, orient, pix_per_cell, cell_per_block,
-                                   spatial_size,
-                                   hist_bins)
+            out_img, bbox_list = self.find_cars(img, ystart, ystop, scale, orient, pix_per_cell,
+                                                cell_per_block, spatial_size, hist_bins)
             print("bbox_list", bbox_list)
             print("bbox_scale", bbox_scale)
             bbox_scale.extend(bbox_list)

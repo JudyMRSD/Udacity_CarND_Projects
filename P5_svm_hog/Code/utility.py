@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from skimage.feature import hog
 from scipy.ndimage.measurements import label
+import matplotlib.pyplot as plt
 
 
 class Utility:
@@ -182,23 +183,25 @@ class Utility:
         heat = np.zeros_like(image[:, :, 0]).astype(np.float)
         # Add heat to each box in box list
         heat = self.add_heat(heat, box_list)
-        cv2.imshow("heat", heat)
-        cv2.waitKey()
+        plt.imshow(heat, cmap='hot')
+        plt.show()
         # Apply threshold to help remove false positives
-        heat = self.apply_threshold(heat, 1)
-        cv2.imshow("heat thresh", heat)
-        cv2.waitKey()
+        heat = self.apply_threshold(heat, 30)
+        plt.imshow(heat, cmap='hot')
+        plt.colorbar()
+        plt.show()
+
         # Visualize the heatmap when displaying
         heatmap = np.clip(heat, 0, 255)
-        cv2.imshow("heatmap clip", heatmap)
-        cv2.waitKey()
         # Find final boxes from heatmap using label function
         # Create an image with some features, then label it using the default (cross-shaped) structuring element
         # (if 2 pixels are connected in vertical or horizontal orientation, they are same object)
         labels = label(heatmap)
         draw_img = self.draw_labeled_bboxes(np.copy(image), labels)
+
         cv2.imshow("draw_img", draw_img)
         cv2.waitKey()
+
 
     def refine_bbox(self):
         # input: image with bbox
