@@ -15,6 +15,7 @@ HOG_Color_Space = 'YUV'  # Can be RGB or YUV
 HOG_Orient = 15  # HOG orientations
 HOG_Pixel_Per_Cell = 8  # HOG pixels per cell
 HOG_Cells_Per_Block = 2  # HOG cells per block
+Svc_Pickle =  "../Data/svc_model.p"
 
 class DetectionPipeline:
     def __init__(self):
@@ -31,7 +32,8 @@ class DetectionPipeline:
         # Check the training time for the SVC
         t = time.time()
         self.svc.fit(X_train, y_train)
-        pickle.dump(self.svc, open("../Data/svc_model.p", "wb" ))
+        # TODO: dump X_scalar to pickle
+        pickle.dump(self.svc, open(Svc_Pickle, "wb" ))
 
         t2 = time.time()
         print(round(t2 - t, 2), 'Seconds to train SVC...')
@@ -43,14 +45,8 @@ class DetectionPipeline:
     def detect_image(self, image_path):
         # load a pre-trained svc model from a serialized (pickle) file
         #dist_pickle = pickle.load(open("../Data/svc_pickle.p", "rb"))
-        svc = LinearSVC()
-        svc_model = pickle.dumps(svc)
 
-        orient =15
-        pix_per_cell = 8
-        cell_per_block = 2
-        spatial_size = (32,32)
-        hist_bins = 32
+        svc_model = pickle.load(open(Svc_Pickle, "rb" ))
 
         img = mpimg.imread(image_path)
         bbox_scale = []
@@ -60,8 +56,7 @@ class DetectionPipeline:
         ystops = [528, 550, 620, 650, 700]
 
         for scale, ystart, ystop in zip(scales, ystarts, ystops):
-            out_img, bbox_list = self.feature_util.find_cars(img, svc_model, ystart, ystop, scale, orient, pix_per_cell,
-                                                cell_per_block, spatial_size, hist_bins)
+            out_img, bbox_list = self.feature_util.find_cars(img, svc_model, ystart, ystop, scale)
             if (len(bbox_list))>0:
                 bbox_scale.extend(bbox_list)
 

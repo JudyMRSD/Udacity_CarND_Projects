@@ -103,13 +103,10 @@ class FeatureUtil:
             imshape = img_tosearch.shape
             img_tosearch = cv2.resize(img_tosearch, (np.int(imshape[1] / scale), np.int(imshape[0] / scale)))
 
-
-        cv2.imshow("img_tosearch", img_tosearch)
-        cv2.waitKey(0)
-        img_tosearch = self.util.convert_color(img_tosearch, conv='RGB2YUV')
+        img_tosearch = self.imgUtil.convert_color(img_tosearch, 'YUV')
 
         height, width, channels = img_tosearch.shape
-        img_tosearch = cv2.resize(img_tosearch, int(width/ scale), int(height / scale))
+        img_tosearch = cv2.resize(img_tosearch, (int(width/ scale), int(height / scale)))
 
         # Define blocks and steps as above
         nxblocks = (width // self.hog_pixel_per_cell) - self.hog_pixel_per_cell + 1
@@ -138,8 +135,7 @@ class FeatureUtil:
                 xleft = xpos * self.hog_pixel_per_cell
                 ytop = ypos * self.hog_pixel_per_cell
 
-                hog_window_1d = np.ravel(hog_window)
-                test_features = self.X_scaler.transform(hog_window_1d)
+                test_features = self.X_scaler.transform(hog_window.reshape(1,-1))
                 test_prediction = svc_model.predict(test_features)
 
                 if test_prediction == 1:
