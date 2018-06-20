@@ -10,8 +10,10 @@ import cv2
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
-# TODO: global variables
 # for svm training and testing parameters
+sample_size = 2
+
+
 # heatmap parameters
 
 class Pipeline:
@@ -33,18 +35,18 @@ class Pipeline:
 
         # Reduce the sample size because
         # The quiz evaluator times out after 13s of CPU time
-        sample_size = 500
+        # sample_size = 50
         cars = cars[0:sample_size]
         notcars = notcars[0:sample_size]
         color_space = 'YUV'  # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
-        orient = 15  # HOG orientations
+        orient = 9  # HOG orientations
         pix_per_cell = 8  # HOG pixels per cell
         cell_per_block = 2  # HOG cells per block
         hog_channel = "ALL"  # Can be 0, 1, 2, or "ALL"
         spatial_size = (32, 32)  # Spatial binning dimensions
         hist_bins = 32  # Number of histogram bins
-        spatial_feat = True  # Spatial features on or off
-        hist_feat = True  # Histogram features on or off
+        spatial_feat = False #True  # Spatial features on or off
+        hist_feat = False #True  # Histogram features on or off
         hog_feat = True  # HOG features on or off
 
 
@@ -63,14 +65,67 @@ class Pipeline:
 
         # Create an array stack of feature vectors
         X = np.vstack((car_features, notcar_features)).astype(np.float64)
+        # todo: unify the parameters with the ones used for training svm
+        cars = glob.glob(data_folder + "train_test_data/vehicles/*/*.png")
+        notcars = glob.glob(data_folder + "train_test_data/non-vehicles/*/*.png")
+
+        # Reduce the sample size because
+        # The quiz evaluator times out after 13s of CPU time
+        cars = cars[0:sample_size]
+        notcars = notcars[0:sample_size]
+        color_space = 'YUV'  # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
+        orient = 9  # HOG orientations
+        pix_per_cell = 8  # HOG pixels per cell
+        cell_per_block = 2  # HOG cells per block
+        hog_channel = "ALL"  # Can be 0, 1, 2, or "ALL"
+        spatial_size = (32, 32)  # Spatial binning dimensions
+        hist_bins = 32  # Number of histogram bins
+        spatial_feat = False  # True  # Spatial features on or off
+        hist_feat = False  # True  # Histogram features on or off
+        hog_feat = True  # HOG features on or off
+
+        car_features = self.util.extract_features(cars, color_space=color_space,
+                                                  spatial_size=spatial_size, hist_bins=hist_bins,
+                                                  orient=orient, pix_per_cell=pix_per_cell,
+                                                  cell_per_block=cell_per_block,
+                                                  hog_channel=hog_channel, spatial_feat=spatial_feat,
+                                                  hist_feat=hist_feat, hog_feat=hog_feat)
+        notcar_features = self.util.extract_features(notcars, color_space=color_space,
+                                                     spatial_size=spatial_size, hist_bins=hist_bins,
+                                                     orient=orient, pix_per_cell=pix_per_cell,
+                                                     cell_per_block=cell_per_block,
+                                                     hog_channel=hog_channel, spatial_feat=spatial_feat,
+                                                     hist_feat=hist_feat, hog_feat=hog_feat)
+
+        # Create an array stack of feature vectors
+        X = np.vstack((car_features, notcar_features)).astype(np.float64)
 
         # Define the labels vector
         y = np.hstack((np.ones(len(car_features)), np.zeros(len(notcar_features))))
 
         # Split up data into randomized training and test sets
         rand_state = np.random.randint(0, 100)
+        # train_test_split,   shuffle :(default=True)
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=rand_state)
+            X, y, test_size=0.15, random_state=rand_state)
+
+        # Fit a per-column scaler
+        self.X_scaler = StandardScaler().fit(X_train)
+        # Apply the scaler to X
+        X_train = self.X_scaler.transform(X_train)
+        X_test = self.X_scaler.transform(X_test)
+
+        print('Using:', orient, 'orientations', pix_per_cell,
+              'pixels per cell and', cell_per_block, 'cells per block')
+        print('Feature vector length:', len(X_train[0]))
+        # Define the labels vector
+        y = np.hstack((np.ones(len(car_features)), np.zeros(len(notcar_features))))
+
+        # Split up data into randomized training and test sets
+        rand_state = np.random.randint(0, 100)
+        # train_test_split,   shuffle :(default=True)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.15, random_state=rand_state)
 
         # Fit a per-column scaler
         self.X_scaler = StandardScaler().fit(X_train)
@@ -103,7 +158,7 @@ class Pipeline:
         # 2. sliding_window
         # 3. refine_bbox
         draw_img = np.copy(img)
-        img = img.astype(np.float32) / 255
+        # img = img.astype(np.float32) / 255
 
         img_tosearch = img[ystart:ystop, :, :]
 
@@ -161,7 +216,8 @@ class Pipeline:
                 hist_features = self.util.color_hist(subimg, nbins=hist_bins)
 
                 # Scale features and make a prediction
-                test_stack = np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1)
+                # test_stack = np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1)
+                test_stack = hog_features.reshape(1,-1)
                 test_features = self.X_scaler.transform(test_stack)
 
                 # test_features = self.X_scaler.transform(np.hstack((shape_feat, hist_feat)).reshape(1, -1))
@@ -201,17 +257,23 @@ class Pipeline:
 
         img = mpimg.imread(image_path)
         bbox_scale = []
-        for scale in np.arange(1.0, 3.0, 0.2):
+        # hyper parameter from https://github.com/TusharChugh/Vehicle-Detection-HOG/blob/master/src/vehicle-detection.ipynb
+        scales = [1, 1.5, 2, 2.5, 3]
+        ystarts = [400, 400, 450, 450, 460]
+        ystops = [528, 550, 620, 650, 700]
+
+        for scale, ystart, ystop in zip(scales, ystarts, ystops):
             out_img, bbox_list = self.find_cars(img, ystart, ystop, scale, orient, pix_per_cell,
                                                 cell_per_block, spatial_size, hist_bins)
             print("bbox_list", bbox_list)
             print("bbox_scale", bbox_scale)
-            bbox_scale.extend(bbox_list)
+            if (len(bbox_list))>0:
+                bbox_scale.extend(bbox_list)
 
         plt.imshow(out_img)
         plt.show()
-        self.util.heat_map(out_img, bbox_scale)
-        # plt.savefig("result.jpg")
+        self.util.heat_map(img, bbox_scale)
+        plt.savefig("result.jpg")
 
     def detect_video(self, video_name):
         # run detect_img on a video

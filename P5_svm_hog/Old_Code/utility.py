@@ -33,6 +33,7 @@ class Utility:
             return features
 
     # Define a function to compute binned color features
+
     def bin_spatial(self, img, size=(32, 32)):
         # Use cv2.resize().ravel() to create the feature vector
         features = cv2.resize(img, size).ravel()
@@ -52,6 +53,7 @@ class Utility:
             file_features = []
             # Read in each one by one
             image = mpimg.imread(file)
+            image = (image * 255).astype(np.uint8)
             # apply color conversion if other than 'RGB'
             if color_space != 'RGB':
                 if color_space == 'HSV':
@@ -67,8 +69,6 @@ class Utility:
             else:
                 feature_image = np.copy(image)
 
-            #cv2.imshow("feature_image", feature_image)
-            #cv2.waitKey(0)
 
             if spatial_feat == True:
                 spatial_features = self.bin_spatial(feature_image, size=spatial_size)
@@ -159,6 +159,7 @@ class Utility:
     def apply_threshold(self, heatmap, threshold):
         # Zero out pixels below the threshold
         heatmap[heatmap <= threshold] = 0
+        heatmap[heatmap > threshold] = 100
         # Return thresholded map
         return heatmap
 
@@ -186,7 +187,7 @@ class Utility:
         plt.imshow(heat, cmap='hot')
         plt.show()
         # Apply threshold to help remove false positives
-        heat = self.apply_threshold(heat, 30)
+        heat = self.apply_threshold(heat, 20)
         plt.imshow(heat, cmap='hot')
         plt.colorbar()
         plt.show()
