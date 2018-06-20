@@ -28,16 +28,19 @@ class DetectionPipeline:
                                         hog_cell_per_block = HOG_Cells_Per_Block,
                                         hog_color_space = HOG_Color_Space)
         self.imgUtil = ImgUtil()
+        self.model_dict = {}
+
     def train_svm(self, data_folder):
-        X_train, X_test, y_train, y_test = self.feature_util.prep_feature_dataset(data_folder)
+        X_train, X_test, y_train, y_test, X_scaler  = self.feature_util.prep_feature_dataset(data_folder)
 
         # Use a linear SVC
         self.svc = LinearSVC()
         # Check the training time for the SVC
         t = time.time()
         self.svc.fit(X_train, y_train)
-        # TODO: dump X_scalar to pickle
-        pickle.dump(self.svc, open(Svc_Pickle, "wb" ))
+        self.model_dict['svc_model'] =  self.svc
+        self.model_dict['X_scaler'] = X_scaler
+        pickle.dump(self.model_dict, open(Svc_Pickle, "wb" ))
 
         t2 = time.time()
         print(round(t2 - t, 2), 'Seconds to train SVC...')
@@ -45,11 +48,12 @@ class DetectionPipeline:
         print('Test Accuracy of SVC = ', round(self.svc.score(X_test, y_test), 4))
 
 
-
     def detect_image(self, img, img_idx, verbose = False):
         # load a pre-trained svc model from a serialized (pickle) file
         #dist_pickle = pickle.load(open("../Data/svc_pickle.p", "rb"))
-        svc_model = pickle.load(open(Svc_Pickle, "rb" ))
+        svc_model_dict = pickle.load(open(Svc_Pickle, "rb" ))
+        svc_model = svc_model_dict['svc_model']
+        X_scaler = svc_model_dict['X_scaler']
 
         bbox_scale = []
         # hyper parameter from https://github.com/TusharChugh/Vehicle-Detection-HOG/blob/master/src/vehicle-detection.ipynb
@@ -58,12 +62,13 @@ class DetectionPipeline:
         ystops = [528, 550, 620, 650, 700]
 
         for scale, ystart, ystop in zip(scales, ystarts, ystops):
-            out_img, bbox_list = self.feature_util.find_cars(img, svc_model, ystart, ystop, scale)
+            out_img, bbox_list = self.feature_util.find_cars(img, svc_model, ystart, ystop, X_scaler, scale)
             if (len(bbox_list))>0:
                 bbox_scale.extend(bbox_list)
         draw_img = self.imgUtil.heat_map(img, bbox_scale, Writeup_Imgs_Dir, Thresh_Heatmap, verbose)
         if (verbose):
             cv2.imwrite(Writeup_Imgs_Dir + str(img_idx)+"_bbox_heatmap.jpg", draw_img)
+        return draw_img
 
     def detect_video(self, video_path):
         cap = cv2.VideoCapture(video_path)
@@ -72,7 +77,7 @@ class DetectionPipeline:
         for i in tqdm.tqdm(frame_ids):
             success, frame = cap.read()
             if success:
-                self.detect_image(frame, img_idx=i, verbose = False)
+                draw_img = self.detect_image(frame, img_idx=i, verbose = False)
             else:
                 print("ERROR: failed to read frame "+str(i))
         cap.release()
@@ -84,10 +89,11 @@ def main():
 
     dp = DetectionPipeline()
     image_path = '../Data/test_images/test4.jpg'
-    dp.train_svm(data_folder)
-    # img = mpimg.imread(image_path)
-    # dp.detect_image(img, verbose=True)
-    dp.detect_video(video_name)
+    # TODO: save scalar too
+    # dp.train_svm(data_folder)
+    img = mpimg.imread(image_path)
+    dp.detect_image(img, 0,verbose=True)
+    # dp.detect_video(video_name)
 
 if __name__ == "__main__":
 

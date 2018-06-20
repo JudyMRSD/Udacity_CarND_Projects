@@ -61,8 +61,6 @@ class ImgUtil:
         draw_img = self.draw_labeled_bboxes(np.copy(image), labels)
         return draw_img
 
-
-
     def draw_labeled_bboxes(self, img, labels):
         # Iterate through all detected cars
         for car_number in range(1, labels[1] + 1):

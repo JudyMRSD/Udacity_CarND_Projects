@@ -67,8 +67,9 @@ class FeatureUtil:
         notcars = glob.glob(data_folder + "train_test_data/non-vehicles/*/*.png")
         cars = cars[:numExample]
         notcars = notcars[:numExample]
-
+        print("extract car features")
         car_features = self.hog_multiple_imgs(cars)
+        print("extract notcars features")
         notcar_features = self.hog_multiple_imgs(notcars)
 
         # Create an array stack of feature vectors
@@ -81,15 +82,15 @@ class FeatureUtil:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.15)
 
         # Fit a per-column scaler
-        self.X_scaler = StandardScaler().fit(X_train)
+        X_scaler = StandardScaler().fit(X_train)
         # Apply the scaler to X
-        X_train = self.X_scaler.transform(X_train)
-        X_test = self.X_scaler.transform(X_test)
+        X_train = X_scaler.transform(X_train)
+        X_test = X_scaler.transform(X_test)
 
-        return X_train, X_test, y_train, y_test
+        return X_train, X_test, y_train, y_test, X_scaler
 
     # Define a single function that can extract features using hog sub-sampling and make predictions
-    def find_cars(self, img, svc_model, ystart, ystop, scale):
+    def find_cars(self, img, svc_model, ystart, ystop, X_scaler, scale):
         # input: saved SVM model
         # output: bbox detections
         # steps:
@@ -135,7 +136,7 @@ class FeatureUtil:
                 xleft = xpos * self.hog_pixel_per_cell
                 ytop = ypos * self.hog_pixel_per_cell
 
-                test_features = self.X_scaler.transform(hog_window.reshape(1,-1))
+                test_features = X_scaler.transform(hog_window.reshape(1,-1))
                 test_prediction = svc_model.predict(test_features)
 
                 if test_prediction == 1:
