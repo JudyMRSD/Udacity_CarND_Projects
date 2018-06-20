@@ -11,7 +11,6 @@ from sklearn.svm import LinearSVC
 import time
 import pickle
 
-
 # Hyper parameters
 HOG_Color_Space = 'YUV'  # Can be RGB or YUV
 HOG_Orient = 15  # HOG orientations
@@ -49,15 +48,14 @@ class DetectionPipeline:
     def detect_image(self, image_path):
         # load a pre-trained svc model from a serialized (pickle) file
         #dist_pickle = pickle.load(open("../Data/svc_pickle.p", "rb"))
-
         svc_model = pickle.load(open(Svc_Pickle, "rb" ))
-
         img = mpimg.imread(image_path)
         bbox_scale = []
+        # scales (not ystarts, ystops, but format is similar)
         # hyper parameter from https://github.com/TusharChugh/Vehicle-Detection-HOG/blob/master/src/vehicle-detection.ipynb
         scales = [1, 1.5, 2, 2.5, 3]
-        ystarts = [400, 400, 450, 450, 460]
-        ystops = [528, 550, 620, 650, 700]
+        ystarts = [400, 400, 400, 400, 400]
+        ystops = [500, 550, 600, 650, 700]
 
         for scale, ystart, ystop in zip(scales, ystarts, ystops):
             out_img, bbox_list = self.feature_util.find_cars(img, svc_model, ystart, ystop, scale)

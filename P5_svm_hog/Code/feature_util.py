@@ -7,9 +7,10 @@ from sklearn.preprocessing import StandardScaler
 from img_util import ImgUtil
 import glob
 from sklearn.model_selection import train_test_split
+import tqdm
 
 
-numExample = 50
+# numExample = 50
 
 
 class FeatureUtil:
@@ -24,7 +25,6 @@ class FeatureUtil:
         self.hog_color_space = hog_color_space
 
     def hog_single_img(self, image):
-        print("self.hog_color_space", self.hog_color_space)
         image = self.imgUtil.convert_color(image, self.hog_color_space)
         hog_features = []
         if (len(image.shape) < 3):
@@ -43,17 +43,18 @@ class FeatureUtil:
             hog_channel = np.expand_dims(hog_channel, axis = num_dim_hog_single_channel)
             hog_features.append(hog_channel)
         hog_features_all = np.concatenate([hog_features[i] for i in range(channels)], axis=num_dim_hog_single_channel) # (7, 7, 2, 2, 15)
-        print("hog_features_all.shape", hog_features_all.shape) # (7, 7, 6, 2, 15)
+        # print("hog_features_all.shape", hog_features_all.shape) # (7, 7, 6, 2, 15)
         return hog_features_all
 
     # use all channels to extract HOG features
     def hog_multiple_imgs(self, imgs):
         features = []
         # Iterate through list of images
-        for file in imgs:
+        img_idx = np.arange(0, len(imgs))
+        for i in tqdm.tqdm(img_idx):
             file_features = []
             # Read in each one by one
-            image = cv2.imread(file)
+            image = cv2.imread(imgs[i])
             hog_features = self.hog_single_img(image)
             hog_features = np.ravel(hog_features)
             features.append(hog_features)
@@ -63,8 +64,8 @@ class FeatureUtil:
     def prep_feature_dataset(self, data_folder):
         cars = glob.glob(data_folder + "train_test_data/vehicles/*/*.png")
         notcars = glob.glob(data_folder + "train_test_data/non-vehicles/*/*.png")
-        cars = cars[:numExample]
-        notcars = notcars[:numExample]
+        # cars = cars[:numExample]
+        # notcars = notcars[:numExample]
 
         car_features = self.hog_multiple_imgs(cars)
         notcar_features = self.hog_multiple_imgs(notcars)
