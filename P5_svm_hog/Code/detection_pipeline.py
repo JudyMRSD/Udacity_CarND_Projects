@@ -11,6 +11,7 @@ import tqdm
 from sklearn.svm import LinearSVC
 import time
 import pickle
+import os
 
 # Hyper parameters
 HOG_Color_Space = 'YUV'  # Can be RGB or YUV
@@ -71,16 +72,27 @@ class DetectionPipeline:
         return draw_img
 
     def detect_video(self, video_path):
+
         cap = cv2.VideoCapture(video_path)
         video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         frame_ids = np.arange(1, video_length)
+
+        video_out_name = Writeup_Imgs_Dir + os.path.splitext(os.path.basename(video_path))[0]
+        video_writer = cv2.VideoWriter_fourcc(*'mp4v')
+        fps = int(cap.get(cv2.CAP_PROP_FPS))
+        frame_wid = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        out_video = cv2.VideoWriter(video_out_name, video_writer, fps, (frame_wid, frame_height))
+
         for i in tqdm.tqdm(frame_ids):
             success, frame = cap.read()
             if success:
                 draw_img = self.detect_image(frame, img_idx=i, verbose = False)
+                out_video.write(draw_img)
             else:
                 print("ERROR: failed to read frame "+str(i))
         cap.release()
+        out_video.release()
 
 
 def main():
@@ -91,9 +103,9 @@ def main():
     image_path = '../Data/test_images/test4.jpg'
     # TODO: save scalar too
     # dp.train_svm(data_folder)
-    img = mpimg.imread(image_path)
-    dp.detect_image(img, 0,verbose=True)
-    # dp.detect_video(video_name)
+    # img = mpimg.imread(image_path)
+    # dp.detect_image(img, 0,verbose=True)
+    dp.detect_video(video_name)
 
 if __name__ == "__main__":
 
