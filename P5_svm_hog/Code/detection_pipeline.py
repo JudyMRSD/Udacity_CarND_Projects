@@ -4,9 +4,10 @@ import cv2
 from skimage.feature import hog
 from scipy.ndimage.measurements import label
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 from feature_util import FeatureUtil
 from img_util import ImgUtil
-
+import tqdm
 from sklearn.svm import LinearSVC
 import time
 import pickle
@@ -45,33 +46,48 @@ class DetectionPipeline:
 
 
 
-    def detect_image(self, image_path):
+    def detect_image(self, img, img_idx, verbose = False):
         # load a pre-trained svc model from a serialized (pickle) file
         #dist_pickle = pickle.load(open("../Data/svc_pickle.p", "rb"))
         svc_model = pickle.load(open(Svc_Pickle, "rb" ))
-        img = mpimg.imread(image_path)
+
         bbox_scale = []
-        # scales (not ystarts, ystops, but format is similar)
         # hyper parameter from https://github.com/TusharChugh/Vehicle-Detection-HOG/blob/master/src/vehicle-detection.ipynb
         scales = [1, 1.5, 2, 2.5, 3]
-        ystarts = [400, 400, 400, 400, 400]
-        ystops = [500, 550, 600, 650, 700]
+        ystarts = [400, 400, 450, 450, 460]
+        ystops = [528, 550, 620, 650, 700]
 
         for scale, ystart, ystop in zip(scales, ystarts, ystops):
             out_img, bbox_list = self.feature_util.find_cars(img, svc_model, ystart, ystop, scale)
             if (len(bbox_list))>0:
                 bbox_scale.extend(bbox_list)
+        draw_img = self.imgUtil.heat_map(img, bbox_scale, Writeup_Imgs_Dir, Thresh_Heatmap, verbose)
+        if (verbose):
+            cv2.imwrite(Writeup_Imgs_Dir + str(img_idx)+"_bbox_heatmap.jpg", draw_img)
 
-        self.imgUtil.heat_map(img, bbox_scale, Writeup_Imgs_Dir, Thresh_Heatmap)
+    def detect_video(self, video_path):
+        cap = cv2.VideoCapture(video_path)
+        video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        frame_ids = np.arange(1, video_length)
+        for i in tqdm.tqdm(frame_ids):
+            success, frame = cap.read()
+            if success:
+                self.detect_image(frame, img_idx=i, verbose = False)
+            else:
+                print("ERROR: failed to read frame "+str(i))
+        cap.release()
+
 
 def main():
     data_folder = "../Data/"
+    video_name = data_folder + "test_video.mp4"
 
     dp = DetectionPipeline()
-    image = '../Data/test_images/test4.jpg'
+    image_path = '../Data/test_images/test4.jpg'
     dp.train_svm(data_folder)
-    dp.detect_image(image)
-    # pl.detect_video(video_name)
+    # img = mpimg.imread(image_path)
+    # dp.detect_image(img, verbose=True)
+    dp.detect_video(video_name)
 
 if __name__ == "__main__":
 

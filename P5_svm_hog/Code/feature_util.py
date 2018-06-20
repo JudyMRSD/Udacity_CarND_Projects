@@ -3,6 +3,7 @@ import cv2
 from skimage.feature import hog
 from scipy.ndimage.measurements import label
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 from sklearn.preprocessing import StandardScaler
 from img_util import ImgUtil
 import glob
@@ -10,7 +11,7 @@ from sklearn.model_selection import train_test_split
 import tqdm
 
 
-# numExample = 50
+numExample = 2
 
 
 class FeatureUtil:
@@ -64,8 +65,8 @@ class FeatureUtil:
     def prep_feature_dataset(self, data_folder):
         cars = glob.glob(data_folder + "train_test_data/vehicles/*/*.png")
         notcars = glob.glob(data_folder + "train_test_data/non-vehicles/*/*.png")
-        # cars = cars[:numExample]
-        # notcars = notcars[:numExample]
+        cars = cars[:numExample]
+        notcars = notcars[:numExample]
 
         car_features = self.hog_multiple_imgs(cars)
         notcar_features = self.hog_multiple_imgs(notcars)

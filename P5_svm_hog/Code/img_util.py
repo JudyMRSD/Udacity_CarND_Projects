@@ -4,6 +4,7 @@ import cv2
 from skimage.feature import hog
 from scipy.ndimage.measurements import label
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 
 
 # todo: read image use opencv, not mpimg
@@ -32,21 +33,24 @@ class ImgUtil:
         # Return updated heatmap
         return heatmap  # Iterate through list of bboxes
 
-    def heat_map(self, image, box_list, writeup_imgs_dir, threshold):
+    def heat_map(self, image, box_list, writeup_imgs_dir, threshold, verbose):
         # input: image with bbox
         # output: heatmap
         heat = np.zeros_like(image[:, :, 0]).astype(np.float)
         # Add heat to each box in box list
         heat = self.add_heat(heat, box_list)
-        plt.imshow(heat, cmap='hot')
-        plt.savefig(writeup_imgs_dir + "heatmap_original.jpg")
-        plt.clf()
+        if verbose:
+            plt.imshow(heat, cmap='hot')
+            plt.savefig(writeup_imgs_dir + "heatmap_original.jpg")
+            plt.clf()
+
         # Apply threshold to help remove false positives
         heat[heat <= threshold] = 0
-        plt.imshow(heat, cmap='hot')
-        plt.colorbar()
-        plt.savefig(writeup_imgs_dir + "heatmap_thresh.jpg")
-        plt.clf()
+        if verbose:
+            plt.imshow(heat, cmap='hot')
+            plt.colorbar()
+            plt.savefig(writeup_imgs_dir + "heatmap_thresh.jpg")
+            plt.clf()
 
         # Visualize the heatmap when displaying
         heatmap = np.clip(heat, 0, 255)
@@ -55,8 +59,8 @@ class ImgUtil:
         # (if 2 pixels are connected in vertical or horizontal orientation, they are same object)
         labels = label(heatmap)
         draw_img = self.draw_labeled_bboxes(np.copy(image), labels)
+        return draw_img
 
-        cv2.imwrite(writeup_imgs_dir + "bbox_heatmap.jpg", draw_img)
 
 
     def draw_labeled_bboxes(self, img, labels):
