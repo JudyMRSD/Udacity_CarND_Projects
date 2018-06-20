@@ -17,6 +17,8 @@ HOG_Color_Space = 'YUV'  # Can be RGB or YUV
 HOG_Orient = 15  # HOG orientations
 HOG_Pixel_Per_Cell = 8  # HOG pixels per cell
 HOG_Cells_Per_Block = 2  # HOG cells per block
+Thresh_Heatmap = 1
+
 Svc_Pickle =  "../Data/model/svc_model.p"
 Writeup_Imgs_Dir = "../Data/experiment_outputs/"
 class DetectionPipeline:
@@ -62,9 +64,7 @@ class DetectionPipeline:
             if (len(bbox_list))>0:
                 bbox_scale.extend(bbox_list)
 
-        self.imgUtil.heat_map(img, bbox_scale, Writeup_Imgs_Dir)
-
-
+        self.imgUtil.heat_map(img, bbox_scale, Writeup_Imgs_Dir, Thresh_Heatmap)
 
 def main():
     data_folder = "../Data/"
@@ -73,9 +73,7 @@ def main():
     image = '../Data/test_images/test4.jpg'
     dp.train_svm(data_folder)
     dp.detect_image(image)
-
     # pl.detect_video(video_name)
-
 
 if __name__ == "__main__":
 

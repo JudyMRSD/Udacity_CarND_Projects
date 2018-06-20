@@ -32,7 +32,7 @@ class ImgUtil:
         # Return updated heatmap
         return heatmap  # Iterate through list of bboxes
 
-    def heat_map(self, image, box_list, writeup_imgs_dir):
+    def heat_map(self, image, box_list, writeup_imgs_dir, threshold):
         # input: image with bbox
         # output: heatmap
         heat = np.zeros_like(image[:, :, 0]).astype(np.float)
@@ -42,7 +42,6 @@ class ImgUtil:
         plt.savefig(writeup_imgs_dir + "heatmap_original.jpg")
         plt.clf()
         # Apply threshold to help remove false positives
-        threshold = 20
         heat[heat <= threshold] = 0
         plt.imshow(heat, cmap='hot')
         plt.colorbar()

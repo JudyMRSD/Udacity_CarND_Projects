@@ -9,7 +9,7 @@ import glob
 from sklearn.model_selection import train_test_split
 
 
-numExample = 3
+numExample = 50
 
 
 class FeatureUtil:
