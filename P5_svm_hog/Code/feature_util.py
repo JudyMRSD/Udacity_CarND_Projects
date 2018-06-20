@@ -24,7 +24,7 @@ class FeatureUtil:
         self.hog_color_space = hog_color_space
 
     def hog_single_img(self, image):
-
+        print("self.hog_color_space", self.hog_color_space)
         image = self.imgUtil.convert_color(image, self.hog_color_space)
         hog_features = []
         if (len(image.shape) < 3):
@@ -102,8 +102,6 @@ class FeatureUtil:
         if scale != 1:
             imshape = img_tosearch.shape
             img_tosearch = cv2.resize(img_tosearch, (np.int(imshape[1] / scale), np.int(imshape[0] / scale)))
-
-        img_tosearch = self.imgUtil.convert_color(img_tosearch, 'YUV')
 
         height, width, channels = img_tosearch.shape
         img_tosearch = cv2.resize(img_tosearch, (int(width/ scale), int(height / scale)))
