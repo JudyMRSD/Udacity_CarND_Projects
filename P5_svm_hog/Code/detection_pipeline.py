@@ -5,6 +5,8 @@ from skimage.feature import hog
 from scipy.ndimage.measurements import label
 import matplotlib.pyplot as plt
 from feature_util import FeatureUtil
+from img_util import ImgUtil
+
 from sklearn.svm import LinearSVC
 import time
 import pickle
@@ -15,15 +17,15 @@ HOG_Color_Space = 'YUV'  # Can be RGB or YUV
 HOG_Orient = 15  # HOG orientations
 HOG_Pixel_Per_Cell = 8  # HOG pixels per cell
 HOG_Cells_Per_Block = 2  # HOG cells per block
-Svc_Pickle =  "../Data/svc_model.p"
-
+Svc_Pickle =  "../Data/model/svc_model.p"
+Writeup_Imgs_Dir = "../Data/experiment_outputs/"
 class DetectionPipeline:
     def __init__(self):
         self.feature_util = FeatureUtil(hog_orient = HOG_Orient,
                                         hog_pixel_per_cell = HOG_Pixel_Per_Cell,
                                         hog_cell_per_block = HOG_Cells_Per_Block,
                                         hog_color_space = HOG_Color_Space)
-
+        self.imgUtil = ImgUtil()
     def train_svm(self, data_folder):
         X_train, X_test, y_train, y_test = self.feature_util.prep_feature_dataset(data_folder)
 
@@ -60,7 +62,7 @@ class DetectionPipeline:
             if (len(bbox_list))>0:
                 bbox_scale.extend(bbox_list)
 
-        self.util.heat_map(img, bbox_scale)
+        self.imgUtil.heat_map(img, bbox_scale, Writeup_Imgs_Dir)
 
 
 
