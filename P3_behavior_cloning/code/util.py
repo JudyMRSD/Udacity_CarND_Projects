@@ -14,7 +14,7 @@ from keras.layers import Lambda, Flatten, Dense
 import cv2
 import numpy as np
 
-
+NumSamples = 32  # -1  use all samples
 
 class ModelUtil():
     # input : RGB image, output: steering angle
@@ -82,7 +82,7 @@ class DataUtil():
             next(reader) # skip header
             for line in reader:
                 samples.append(line)
-        samples=samples[0:32]
+        samples=samples[0:NumSamples]
         train_samples, validation_samples = train_test_split(samples, test_size=0.2)
         num_train_samples = len(train_samples)
         num_validation_samples = len(validation_samples)

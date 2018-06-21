@@ -14,13 +14,15 @@ from keras.layers import Lambda, Flatten, Dense
 import cv2
 import numpy as np
 from util import ModelUtil, DataUtil
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+
 
 # TODO: load image as RGB (drive.py use RGB)
 
 ModelDir = "../data/model/"
 Driving_Log_Path = "../data/driving_log.csv"
 Img_Data_Dir = "../data/IMG/"
-
+Num_Epochs = 1000
 
 class Pipeline():
     def __init__(self):
@@ -30,14 +32,14 @@ class Pipeline():
         self.dataUtil = DataUtil(Img_Data_Dir)
         print(self.learning_rate)
 
-    def train(self):
+    def train(self, train_model_path):
         num_train_samples, num_validation_samples, train_generator, validation_generator = \
             self.dataUtil.train_val_generator(csv_path = Driving_Log_Path)
         model = self.modelUtil.create_network(Top_Crop, Bottom_Crop, Input_Shape)
         # TODO: add callbacks
         # TODO: add data augmentation
-        # callbacks = [EarlyStopping(monitor='val_loss', patience=2),
-        #              ModelCheckpoint(filepath=self.train_model_path, monitor='val_loss', save_best_only=True)]
+        callbacks = [EarlyStopping(monitor='val_loss', patience=2),
+                     ModelCheckpoint(filepath=train_model_path, monitor='val_loss', save_best_only=True)]
         print("num_train_samples",num_train_samples)
         print("num_validation_samples", num_validation_samples)
         # model.fit_generator(train_generator,
@@ -51,15 +53,19 @@ class Pipeline():
                             samples_per_epoch= num_train_samples,
                             validation_data=validation_generator,
                             nb_val_samples=num_validation_samples,
-                            nb_epoch=3,
+                            nb_epoch=Num_Epochs,
+                            callbacks=callbacks,
                             verbose=2)
 
         model.save(ModelDir + 'model.h5')
 
+        # TODO: test on X_test, y_test, print accuracy
+
 def main():
     print("main function from model.py")
     pl = Pipeline()
-    pl.train()
+    pl.train(train_model_path= ModelDir + "model.h5")
+
 
 
 if __name__ == '__main__':
