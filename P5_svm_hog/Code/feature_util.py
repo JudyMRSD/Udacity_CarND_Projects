@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 import tqdm
 
 
-# numExample = 2
+numExample = 2
 
 
 class FeatureUtil:
@@ -65,8 +65,8 @@ class FeatureUtil:
     def prep_feature_dataset(self, data_folder):
         cars = glob.glob(data_folder + "train_test_data/vehicles/*/*.png")
         notcars = glob.glob(data_folder + "train_test_data/non-vehicles/*/*.png")
-        # cars = cars[:numExample]
-        # notcars = notcars[:numExample]
+        cars = cars[:numExample]
+        notcars = notcars[:numExample]
         print("extract car features")
         car_features = self.hog_multiple_imgs(cars)
         print("extract notcars features")

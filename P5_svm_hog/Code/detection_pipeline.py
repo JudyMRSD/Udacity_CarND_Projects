@@ -102,7 +102,7 @@ def main():
     dp = DetectionPipeline()
     image_path = '../Data/test_images/test4.jpg'
     # TODO: save scalar too
-    # dp.train_svm(data_folder)
+    dp.train_svm(data_folder)
     # img = mpimg.imread(image_path)
     # dp.detect_image(img, 0,verbose=True)
     dp.detect_video(video_name)
