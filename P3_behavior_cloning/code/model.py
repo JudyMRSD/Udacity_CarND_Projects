@@ -1,3 +1,4 @@
+
 # input RGB image, output steer angle
 
 # crop layer example from Udacity
@@ -12,53 +13,54 @@ from keras.layers import Cropping2D
 from keras.layers import Lambda, Flatten, Dense
 import cv2
 import numpy as np
-from util import DataUtil
+from util import ModelUtil, DataUtil
+
 # TODO: load image as RGB (drive.py use RGB)
-
-
-
 
 ModelDir = "../data/model/"
 Driving_Log_Path = "../data/driving_log.csv"
 Img_Data_Dir = "../data/IMG/"
-class DriveModel():
-    # input : RGB image, output: steering angle
-    def __init__(self):
-        self.a = 0
 
-    @staticmethod
-    def create_network():
-        # set up cropping2D layer
-        model = Sequential()
-        model.add(Cropping2D(cropping=((50,20),(0,0)), input_shape=Input_Shape))
-        # From Udacity online course: add lambda layer to normalize image and bring to zero mean
-        model.add(Lambda(lambda x:(x/255.0)-0.5))
-        model.add(Flatten())
-        model.add(Dense(1)) # output steering angle
-        model.summary()
-        model.compile(loss='mse', optimizer='adam')
-        return model
 
-class pipeline():
+class Pipeline():
     def __init__(self):
+        print("init")
         self.learning_rate = 0.001
-        self.model = DriveModel()
+        self.modelUtil = ModelUtil()
         self.dataUtil = DataUtil()
-        self.X_train, self.Y_train, self.X_test, self.Y_test = \
-            self.dataUtil.create_dataset(Img_Data_Dir, Driving_Log_Path)
-
+        print(self.learning_rate)
 
     def train(self):
-        X_train, X_val, Y_train, Y_val, X_test, Y_test = self.dataUtil.split()
-        self.model.fit(X_train, Y_train, validation_split = 0.2, shuffle=True, nb_epoch=2)
-        self.model.save(ModelDir + 'model.h5')
+        num_train_samples, num_validation_samples, train_generator, validation_generator = \
+            self.dataUtil.train_val_generator(image_dir = Img_Data_Dir, csv_path = Driving_Log_Path)
+        model = self.modelUtil.create_network(Top_Crop, Bottom_Crop, Input_Shape)
+        # TODO: add callbacks
+        # TODO: add data augmentation
+        # callbacks = [EarlyStopping(monitor='val_loss', patience=2),
+        #              ModelCheckpoint(filepath=self.train_model_path, monitor='val_loss', save_best_only=True)]
+        print("num_train_samples",num_train_samples)
+        print("num_validation_samples", num_validation_samples)
+        # model.fit_generator(train_generator,
+        #                     steps_per_epoch=num_train_samples,
+        #                     validation_data=validation_generator,
+        #                     validation_steps=num_validation_samples,
+        #                     epochs=5,
+        #                     verbose=1)
 
+        model.fit_generator(train_generator,
+                            samples_per_epoch= num_train_samples,
+                            validation_data=validation_generator,
+                            nb_val_samples=num_validation_samples,
+                            nb_epoch=3,
+                            verbose=2)
 
-
-
+        model.save(ModelDir + 'model.h5')
 
 def main():
-    print("main")
-    drive_m = drive_model()
-    drive_m.create_network()
+    print("main function from model.py")
+    pl = Pipeline()
+    pl.train()
 
+
+if __name__ == '__main__':
+    main()
