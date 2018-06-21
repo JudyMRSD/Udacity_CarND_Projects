@@ -27,12 +27,12 @@ class Pipeline():
         print("init")
         self.learning_rate = 0.001
         self.modelUtil = ModelUtil()
-        self.dataUtil = DataUtil()
+        self.dataUtil = DataUtil(Img_Data_Dir)
         print(self.learning_rate)
 
     def train(self):
         num_train_samples, num_validation_samples, train_generator, validation_generator = \
-            self.dataUtil.train_val_generator(image_dir = Img_Data_Dir, csv_path = Driving_Log_Path)
+            self.dataUtil.train_val_generator(csv_path = Driving_Log_Path)
         model = self.modelUtil.create_network(Top_Crop, Bottom_Crop, Input_Shape)
         # TODO: add callbacks
         # TODO: add data augmentation

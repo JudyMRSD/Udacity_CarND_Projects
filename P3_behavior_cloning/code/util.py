@@ -14,6 +14,8 @@ from keras.layers import Lambda, Flatten, Dense
 import cv2
 import numpy as np
 
+
+
 class ModelUtil():
     # input : RGB image, output: steering angle
     def __init__(self):
@@ -33,11 +35,32 @@ class ModelUtil():
         return model
 
 class DataUtil():
-    def __init__(self):
-        pass
+    def __init__(self, image_dir):
+        self.center_col_idx = 0
+        self.left_col_idx = 1
+        self.right_col_idx = 2
+        self.center_angle_col_idx = 3
+        self.image_dir = image_dir
+        self.angle_correction = 0.2
 
-    def generator(self, image_dir, samples, batch_size=32):
+    def read_img_angle(self, batch_sample):
+        images = []
+        angles = []
+        col_idx = [self.center_col_idx, self.left_col_idx, self.right_col_idx]
+        angle_adjust = [0,  self.angle_correction, -self.angle_correction]
+        angle = float(batch_sample[self.center_angle_col_idx])
+
+        for i in col_idx:
+            bgr_image = cv2.imread(self.image_dir + batch_sample[i].split('/')[-1])
+            rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)  # convert color to RGB to match drive.py
+            images.append(rgb_image)
+            angles.append(angle+angle_adjust[i])
+        return images, angles
+
+    def generator(self, samples, batch_size=32):
         num_samples = len(samples)
+        print("num_samples", num_samples)
+
         while 1:  # Loop forever so the generator never terminates
             sklearn.utils.shuffle(samples)
             for offset in range(0, num_samples, batch_size):
@@ -45,34 +68,27 @@ class DataUtil():
                 images = []
                 angles = []
                 for batch_sample in batch_samples:
-                    name = image_dir + batch_sample[0].split('/')[-1]
-                    print("name",name)
-                    center_image = cv2.imread(name)
-                    center_angle = float(batch_sample[3])
-                    images.append(center_image)
-                    print("center_image", center_image.shape)
-                    angles.append(center_angle)
-
-                # trim image to only see section with road
-
+                    sample_images, sample_angles = self.read_img_angle(batch_sample)
+                    images.extend(sample_images)
+                    angles.extend(sample_angles)
                 X_train = np.array(images)
-                Y_train = np.array(angles)
-                print("X_train.shape", X_train.shape)
-                print("Y_train.shape", Y_train.shape)
-                yield sklearn.utils.shuffle(X_train, Y_train)
+                y_train = np.array(angles)
+                yield sklearn.utils.shuffle(X_train, y_train)
 
-    def train_val_generator(self, image_dir, csv_path):
+    def train_val_generator(self, csv_path):
         samples = []
         with open(csv_path) as csvfile:
             reader = csv.reader(csvfile)
+            next(reader) # skip header
             for line in reader:
                 samples.append(line)
+        samples=samples[0:32]
         train_samples, validation_samples = train_test_split(samples, test_size=0.2)
         num_train_samples = len(train_samples)
         num_validation_samples = len(validation_samples)
-        train_generator = self.generator(image_dir, train_samples, batch_size=32)
+        train_generator = self.generator(train_samples, batch_size=32)
 
-        validation_generator = self.generator(image_dir, validation_samples, batch_size=32)
+        validation_generator = self.generator(validation_samples, batch_size=32)
 
         return  num_train_samples, num_validation_samples, train_generator, validation_generator
 
