@@ -2,7 +2,12 @@
 # visualize data: distribution of steering angles
 import cv2
 import os
-
+from keras.models import Sequential
+from keras.layers import Conv2D
+from keras.layers.convolutional import MaxPooling2D
+from keras.layers.core import Activation
+from keras.layers.core import Flatten
+from keras.layers.core import Dense
 import numpy as np
 import sklearn
 import csv
@@ -14,7 +19,7 @@ from keras.layers import Lambda, Flatten, Dense
 import cv2
 import numpy as np
 
-NumSamples = 32  # -1  use all samples
+NumSamples = -1  # 32 # -1  use all samples
 
 class ModelUtil():
     # input : RGB image, output: steering angle
@@ -24,12 +29,36 @@ class ModelUtil():
     @staticmethod
     def create_network(top_crop, bottom_crop, input_shape):
         # set up cropping2D layer
+        # model = Sequential()
+        # model.add(Cropping2D(cropping=((top_crop, bottom_crop),(0,0)), input_shape=input_shape))
+        # # From Udacity online course: add lambda layer to normalize image and bring to zero mean
+        # model.add(Lambda(lambda x:(x/255.0)-0.5))
+        # model.add(Flatten())
+        # model.add(Dense(1)) # output steering angle
+
         model = Sequential()
-        model.add(Cropping2D(cropping=((top_crop, bottom_crop),(0,0)), input_shape=input_shape))
-        # From Udacity online course: add lambda layer to normalize image and bring to zero mean
-        model.add(Lambda(lambda x:(x/255.0)-0.5))
+        # convolution, relu:  conv1 (?, 32, 32, 6)
+        # max pool:  conv1 (?, 16, 16, 6)
+        model.add(Conv2D(6, 5, activation='relu', padding='same',
+                         input_shape=input_shape))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # convolution, relu:  conv2(?, 16, 16, 16)
+        # max pool: conv2(?, 8, 8, 16)
+        model.add(Conv2D(16, 5, activation='relu', padding='same'))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # conv3 (?, 8, 8, 16)
+        # conv3 (?, 4, 4, 16)
+        model.add(Conv2D(16, 5, activation='relu', padding='same'))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # Flatten
+        # Flatten the output shape of the final pooling layer such that it's 1D instead of 3D.
+        # fc0 (?, 256)
         model.add(Flatten())
-        model.add(Dense(1)) # output steering angle
+        model.add(Dense(256))
+        model.add(Activation("relu"))
+        # final softmax layer output prediction of probabilities for each class
+        model.add(Dense(1))
+
         model.summary()
         model.compile(loss='mse', optimizer='adam')
         return model

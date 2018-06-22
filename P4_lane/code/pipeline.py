@@ -63,6 +63,7 @@ def main():
     birdeye_img, to_bird_matrix, to_front_matrix = perspective_tool.warp_front_to_birdeye(src, dst,
                                                                                           binary_front_img,
                                                                                           verbose=True)
+    print("to_front_matrix", to_front_matrix)
 
     # plot the 4 lines on original image
     # plot warp the image with lines plotted on it

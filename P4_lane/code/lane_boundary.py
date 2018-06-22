@@ -9,6 +9,7 @@ class Boundary():
         self.a  = 0
     def histogram_peaks(self, outdir, img):
         self.img = img
+        assert (len(np.unique(self.img) == 2) , "input to histogram_peaks must be binary image, with values 0 or 255")
         print("img shape", self.img.shape)
         #img = img/255
         # take a histogram along all the columns in the lower half of the image
@@ -33,9 +34,9 @@ class Boundary():
         # Set height of windows (image height divided by number of sliding windows)
         window_height = np.int(self.img_h // nwindows)
         # Identify the x and y positions of all nonzero pixels in the image
-        nonzero = self.img.nonzero()
-        self.nonzeroy = np.array(nonzero[0]) # y coordinate of non zero pixel (row)
-        self.nonzerox = np.array(nonzero[1]) # x coordinate of non zero pixel  (col)
+        nonzero_pix = self.img.nonzero()
+        self.nonzeroy = np.array(nonzero_pix[0]) # y coordinate of non zero pixel (row)
+        self.nonzerox = np.array(nonzero_pix[1]) # x coordinate of non zero pixel  (col)
         # Current positions to be updated for each window
         leftx_current = self.leftx_base
         rightx_current = self.rightx_base
@@ -66,7 +67,9 @@ class Boundary():
             # Identify x coordinate for nonzero pixels in the current window
             # good_right_inds[i] == 1 if ith point in nonzero points is inside the window
             good_left_inds = ((self.nonzeroy >= win_y_low) & (self.nonzeroy < win_y_high) &
-                              (self.nonzerox >= win_xleft_low) & (self.nonzerox < win_xleft_high)).nonzero()[0]
+                              (self.nonzerox >= win_xleft_low) & (self.nonzerox < win_xleft_high))
+            good_left_inds = np.nonzero(good_left_inds)
+            good_left_inds = good_left_inds[0]
             good_right_inds = ((self.nonzeroy >= win_y_low) & (self.nonzeroy < win_y_high) &
                                (self.nonzerox >= win_xright_low) & (self.nonzerox < win_xright_high)).nonzero()[0]
 
@@ -104,6 +107,7 @@ class Boundary():
         self.ploty = np.linspace(0, self.img_h - 1, self.img_h)
         self.left_fitx = self.left_fit[0] * self.ploty ** 2 + self.left_fit[1] * self.ploty + self.left_fit[2]
         self.right_fitx = self.right_fit[0] * self.ploty ** 2 + self.right_fit[1] * self.ploty + self.right_fit[2]
+        # replace pixels on the lane by blue and red color pixels
         self.out_img[self.nonzeroy[self.left_lane_inds], self.nonzerox[self.left_lane_inds]] = [255, 0, 0]
         self.out_img[self.nonzeroy[self.right_lane_inds], self.nonzerox[self.right_lane_inds]] = [0, 0, 255]
         plt.imshow(self.out_img)
@@ -126,12 +130,12 @@ class Boundary():
 
         left_x = self.left_fit[0] * (nonzeroy ** 2) + self.left_fit[1] * nonzeroy + self.left_fit[2]
         right_x = self.right_fit[0] * (nonzeroy ** 2) + self.right_fit[1] * nonzeroy + self.right_fit[2]
-        left_lane_inds = ((nonzerox > left_x - self.margin) & (nonzerox < left_x + self.margin))
+        self.left_lane_inds = ((nonzerox > left_x - self.margin) & (nonzerox < left_x + self.margin))
         right_lane_inds = ((nonzerox > (right_x - self.margin)) & (nonzerox < right_x + self.margin))
 
         # Again, extract left and right line pixel positions
-        leftx = nonzerox[left_lane_inds]
-        lefty = nonzeroy[left_lane_inds]
+        leftx = nonzerox[self.left_lane_inds]
+        lefty = nonzeroy[self.left_lane_inds]
         rightx = nonzerox[right_lane_inds]
         righty = nonzeroy[right_lane_inds]
         # Fit a second order polynomial to each
@@ -205,9 +209,9 @@ class Boundary():
     def visualize_lane(self, outdir, color_birdeye, original_img, to_front_matrix, blend_alpha = 0.5):
         # input: 3 channel warped image
         color_birdeye_mask = np.zeros_like(color_birdeye)
-        # todo: use polynomial_to_points
         pts, left_vertices, right_vertices = self.polynomial_to_points(self.left_fitx, self.right_fitx, self.margin)
         # draw lane boundaries on the warped imagely
+        # todo: color_birdeye_mask is still zeros after fillPoly
         cv2.fillPoly(color_birdeye_mask, [pts], (0,255,0))
         cv2.polylines(color_birdeye_mask, [left_vertices], isClosed = False, color =  (255, 0,0), thickness = 10)
         cv2.polylines(color_birdeye_mask, [right_vertices], isClosed = False, color =  (0, 0, 255), thickness = 10)
@@ -224,27 +228,13 @@ class Boundary():
 
 
 def main():
-    car_input_test = '../test_images/straight_lines2.jpg'
-    front_img = cv2.imread(car_input_test)
-    perspective_tool = Perspective()
+    to_front_matrix = np.array([[ 1.40625000e-01, -7.63888889e-01,  5.50000000e+02],
+                                 [ 1.19904087e-14, -4.98263889e-01,  4.60000000e+02],
+                                 [ 1.99493200e-17, -1.19357639e-03,  1.00000000e+00]]).astype(int)
 
-    h, w, _ = front_img.shape
-    src = np.float32([[w, h],
-                      [0, h],
-                      [550, 460],
-                      [730, 460]])
-    dst = np.float32([[w, h],
-                      [0, h],
-                      [0, 0],
-                      [w, 0]])
-    birdeye_img, to_bird_matrix, to_front_matrix = perspective_tool.warp_front_to_birdeye(src, dst, front_img,
-                                                                                          verbose=True)
-    cv2.imwrite("../test_images/birdeye.jpg", birdeye_img)
-
-
-    fname = "../test_images/birdeye.jpg"
+    birdeye_binary_img = "../test_images/birdeye.jpg"
     outdir = "../output_images/histogram_lane/"
-    warped_img = cv2.imread(fname)
+    warped_img = cv2.imread(birdeye_binary_img)
     binary_warped = cv2.cvtColor(warped_img, cv2.COLOR_BGR2GRAY)
     boundaryTool = Boundary()
     boundaryTool.histogram_peaks(outdir, binary_warped)
@@ -255,8 +245,8 @@ def main():
     boundaryTool.calc_curvature(boundaryTool.img_h-10)
     boundaryTool.calc_dist_center()
 
-
-    boundaryTool.visualize_lane(outdir, birdeye_img, front_img, to_front_matrix)
+    front_img = cv2.imread('../test_images/straight_lines2.jpg')
+    boundaryTool.visualize_lane(outdir, warped_img, front_img, to_front_matrix)
 
 if __name__ == "__main__":
     main()

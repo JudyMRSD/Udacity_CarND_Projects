@@ -16,13 +16,11 @@ import numpy as np
 from util import ModelUtil, DataUtil
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
-
 # TODO: load image as RGB (drive.py use RGB)
-
 ModelDir = "../data/model/"
 Driving_Log_Path = "../data/driving_log.csv"
 Img_Data_Dir = "../data/IMG/"
-Num_Epochs = 1000
+Num_Epochs = 5
 
 class Pipeline():
     def __init__(self):
@@ -48,7 +46,6 @@ class Pipeline():
         #                     validation_steps=num_validation_samples,
         #                     epochs=5,
         #                     verbose=1)
-
         model.fit_generator(train_generator,
                             samples_per_epoch= num_train_samples,
                             validation_data=validation_generator,
@@ -56,9 +53,7 @@ class Pipeline():
                             nb_epoch=Num_Epochs,
                             callbacks=callbacks,
                             verbose=2)
-
         model.save(ModelDir + 'model.h5')
-
         # TODO: test on X_test, y_test, print accuracy
 
 def main():
