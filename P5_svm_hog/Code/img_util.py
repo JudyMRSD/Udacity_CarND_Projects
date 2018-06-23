@@ -20,6 +20,8 @@ class ImgUtil:
             feature_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         elif color_space == 'HSV':
             feature_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        elif color_space == 'GRAY':
+            feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         else:
             print("Error: invalid color_space")
 

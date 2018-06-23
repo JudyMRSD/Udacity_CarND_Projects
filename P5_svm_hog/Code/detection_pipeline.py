@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 from feature_util import FeatureUtil
 from img_util import ImgUtil
+from experiment_param import ParamUtil
 import tqdm
 from sklearn.svm import LinearSVC
 import time
@@ -31,6 +32,7 @@ class DetectionPipeline:
                                         hog_cell_per_block = HOG_Cells_Per_Block,
                                         hog_color_space = HOG_Color_Space)
         self.imgUtil = ImgUtil()
+        self.paramUtil = ParamUtil()
         self.model_dict = {}
 
     def train_svm(self, data_folder):
@@ -104,8 +106,7 @@ def main():
 
     dp = DetectionPipeline()
 
-    dp.feature_util.hog_param_vis(train_data_folder, Writeup_Imgs_Dir)
-
+    dp.paramUtil.hog_param_vis(train_data_folder, Writeup_Imgs_Dir)
     image_path = '../Data/test_images/test4.jpg'
     # TODO: save scalar too
     dp.train_svm(train_data_folder)
