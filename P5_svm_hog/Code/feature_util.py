@@ -63,8 +63,8 @@ class FeatureUtil:
 
     # create test and train data for svm
     def prep_feature_dataset(self, data_folder):
-        cars = glob.glob(data_folder + "train_test_data/vehicles/*/*.png")
-        notcars = glob.glob(data_folder + "train_test_data/non-vehicles/*/*.png")
+        cars = glob.glob(data_folder + "vehicles/*/*.png")
+        notcars = glob.glob(data_folder + "non-vehicles/*/*.png")
         cars = cars[:numExample]
         notcars = notcars[:numExample]
         print("extract car features")
