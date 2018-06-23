@@ -100,12 +100,15 @@ class DetectionPipeline:
 def main():
     data_folder = "../Data/"
     video_name = Video_Folder + "test_video.mp4"
-    data_folder = "../Data/train_test_data/"
+    train_data_folder = "../Data/train_test_data/"
 
     dp = DetectionPipeline()
+
+    dp.feature_util.hog_param_vis(train_data_folder, Writeup_Imgs_Dir)
+
     image_path = '../Data/test_images/test4.jpg'
     # TODO: save scalar too
-    dp.train_svm(data_folder)
+    dp.train_svm(train_data_folder)
     # img = mpimg.imread(image_path)
     # dp.detect_image(img, 0,verbose=True)
     dp.detect_video(video_name)
