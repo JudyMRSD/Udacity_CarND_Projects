@@ -23,6 +23,7 @@ Thresh_Heatmap = 1
 Svc_Pickle =  "../Data/model/svc_model.p"
 Writeup_Imgs_Dir = "../Data/output_images/"
 Video_Folder = "../Data/input_videos/"
+
 class DetectionPipeline:
     def __init__(self):
         self.feature_util = FeatureUtil(hog_orient = HOG_Orient,
@@ -59,10 +60,9 @@ class DetectionPipeline:
 
         bbox_scale = []
         # hyper parameter from https://github.com/TusharChugh/Vehicle-Detection-HOG/blob/master/src/vehicle-detection.ipynb
-        # hyper parameters tuned (jin)
         scales = [1, 1.5, 2, 2.5, 3]
-        ystarts = [400, 400, 400, 400, 400]
-        ystops = [500, 550, 650, 650, 700]
+        ystarts = [400, 400, 450, 450, 460]
+        ystops = [528, 550, 620, 650, 700]
 
         for scale, ystart, ystop in zip(scales, ystarts, ystops):
             out_img, bbox_list = self.feature_util.find_cars(img, svc_model, ystart, ystop, X_scaler, scale)
@@ -98,11 +98,13 @@ class DetectionPipeline:
 
 
 def main():
-
+    data_folder = "../Data/"
     video_name = Video_Folder + "test_video.mp4"
     data_folder = "../Data/train_test_data/"
+
     dp = DetectionPipeline()
     image_path = '../Data/test_images/test4.jpg'
+    # TODO: save scalar too
     dp.train_svm(data_folder)
     # img = mpimg.imread(image_path)
     # dp.detect_image(img, 0,verbose=True)

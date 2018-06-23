@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 import tqdm
 
 
-numExample = -1 # -1 use all images
+numExample =2 # -1 use all images
 
 
 class FeatureUtil:
@@ -148,12 +148,6 @@ class FeatureUtil:
                     cv2.rectangle(draw_img, (xmin, ymin),(xmax, ymax), (0, 0, 255), 6)
                     bbox_list.append(((xmin, ymin), (xmax, ymax)))
         return draw_img, bbox_list
-
-
-
-
-
-
 
 
 

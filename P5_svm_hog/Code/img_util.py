@@ -75,5 +75,3 @@ class ImgUtil:
             cv2.rectangle(img, bbox[0], bbox[1], (0, 0, 255), 6)
         # Return the image
         return img
-
-
