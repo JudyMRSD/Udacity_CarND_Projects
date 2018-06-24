@@ -33,9 +33,9 @@ class ImgUtil:
         bbox_hist = np.array(bbox_hist)
 
         for bbox_list in bbox_hist:
-            print("bbox_list", bbox_list)
+            #print("bbox_list", bbox_list)
             for box in bbox_list:
-                print("box", box)
+                #print("box", box)
                 # Add += 1 for all pixels inside each bbox
                 # Assuming each "box" takes the form ((x1, y1), (x2, y2))
                 heatmap[box[0][1]:box[1][1], box[0][0]:box[1][0]] += 1

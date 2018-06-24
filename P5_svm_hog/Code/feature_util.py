@@ -146,5 +146,17 @@ class FeatureUtil:
                     ymax = ymin + win_draw
 
                     cv2.rectangle(draw_img, (xmin, ymin),(xmax, ymax), (0, 0, 255), 6)
-                    bbox_list.append(((xmin, ymin), (xmax, ymax)))
+                    bbox_list.append(np.array([[xmin, ymin], [xmax, ymax]]))
         return draw_img, bbox_list
+
+
+
+
+
+
+
+
+
+
+
+

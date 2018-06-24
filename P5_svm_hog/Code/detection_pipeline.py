@@ -19,10 +19,9 @@ HOG_Color_Space = 'YUV'  # Can be RGB or YUV
 HOG_Orient = 15  # HOG orientations
 HOG_Pixel_Per_Cell = 8  # HOG pixels per cell
 HOG_Cells_Per_Block = 2  # HOG cells per block
-Thresh_Heatmap = 1
 
 # number of history frames to keep for more rubust heatmap
-Hist_Len = 15
+Hist_Len = 2
 
 Svc_Pickle =  "../Data/model/svc_model.p"
 Writeup_Imgs_Dir = "../Data/output_images/"
@@ -38,6 +37,7 @@ class DetectionPipeline:
         self.paramUtil = ParamUtil()
         self.model_dict = {}
         self.bbox_hist = []
+        self.total_num_box = 0
 
     def train_svm(self, data_folder):
         X_train, X_test, y_train, y_test, X_scaler  = self.feature_util.prep_feature_dataset(data_folder)
@@ -75,14 +75,22 @@ class DetectionPipeline:
             out_img, bbox_list = self.feature_util.find_cars(img, svc_model, ystart, ystop, X_scaler, scale)
             if (len(bbox_list))>0:
                 bbox_scale.extend(bbox_list)
+        print("np.array(bbox_scale).shape", np.array(bbox_scale).shape[0])
+        if (len(bbox_scale) > 0):
+            self.total_num_box += np.array(bbox_scale).shape[0] # num bbox in current frame, 2 (xmin, ymin), 2(xmax, ymax)
+            self.bbox_hist.append(bbox_scale)  # (num frames, num bbox in current frame, 2 (xmin, ymin), 2(xmax, ymax))
 
-        self.bbox_hist.append(bbox_scale)
-        draw_img = self.imgUtil.heat_map(img, self.bbox_hist, Writeup_Imgs_Dir, Thresh_Heatmap, verbose)
+        thresh_heatmap = 1 + self.total_num_box//2
+
+        draw_img = self.imgUtil.heat_map(img, self.bbox_hist, Writeup_Imgs_Dir, thresh_heatmap, verbose)
         if (verbose):
             cv2.imwrite(Writeup_Imgs_Dir + str(img_idx)+"_bbox_heatmap.jpg", draw_img)
         # only keep history bbox in recent frames
         if (len(self.bbox_hist) > Hist_Len):
+            self.total_num_box -= np.array(bbox_scale).shape[0] # (num bbox in current frame, 2 (xmin, ymin), 2(xmax, ymax))
+            print("np.array(self.bbox_hist)[1:]", np.array(self.bbox_hist)[1:].shape)
             self.bbox_hist = self.bbox_hist[1:]
+            print("self.bbox_hist", np.array(self.bbox_hist).shape)
         return draw_img
 
     def detect_video(self, video_path):
