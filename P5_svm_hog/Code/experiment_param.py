@@ -10,6 +10,7 @@ import glob
 from sklearn.model_selection import train_test_split
 import tqdm
 
+
 class ParamUtil:
     def __init__(self):
         self.imgUtil = ImgUtil()
@@ -43,7 +44,7 @@ class ParamUtil:
 
                         plt.tight_layout()
                         param_file_name = colorS +"_ori_"+str(ori) + "_pixPcell_"+str(pixPcell)+ "_cellPblock_"+ str(cellPblock)
-                        plt.savefig(out_dir + param_file_name+"hog_visuallize.jpg")
+                        plt.savefig(out_dir + "hog_params/"+ param_file_name+".jpg")
 
 
     def hog_single_img_vis(self, image, image_class, ax, ax_row, hog_orient, hog_pixel_per_cell,
@@ -67,4 +68,3 @@ class ParamUtil:
 
             ax[ax_row][i+1].imshow(hog_img, cmap='gray')
             ax[ax_row][i+1].set_title(hog_color_space[i])
-            plt.savefig("../Data/output_images/" + "hog_visuallize.jpg")

@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 import tqdm
 
 
-numExample =2 # -1 use all images
+numExample =-1 # -1 use all images
 
 
 class FeatureUtil:

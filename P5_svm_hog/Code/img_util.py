@@ -27,22 +27,29 @@ class ImgUtil:
 
         return feature_image
 
-    def add_heat(self, heatmap, bbox_list):
+    def add_heat(self, heatmap, bbox_hist):
         # Iterate through list of bboxes
-        for box in bbox_list:
-            # Add += 1 for all pixels inside each bbox
-            # Assuming each "box" takes the form ((x1, y1), (x2, y2))
-            heatmap[box[0][1]:box[1][1], box[0][0]:box[1][0]] += 1
+        print("bbox_hist", bbox_hist)
+        bbox_hist = np.array(bbox_hist)
+
+        for bbox_list in bbox_hist:
+            print("bbox_list", bbox_list)
+            for box in bbox_list:
+                print("box", box)
+                # Add += 1 for all pixels inside each bbox
+                # Assuming each "box" takes the form ((x1, y1), (x2, y2))
+                heatmap[box[0][1]:box[1][1], box[0][0]:box[1][0]] += 1
 
         # Return updated heatmap
         return heatmap  # Iterate through list of bboxes
 
-    def heat_map(self, image, box_list, writeup_imgs_dir, threshold, verbose):
+    def heat_map(self, image, bbox_hist, writeup_imgs_dir, threshold, verbose):
         # input: image with bbox
         # output: heatmap
         heat = np.zeros_like(image[:, :, 0]).astype(np.float)
         # Add heat to each box in box list
-        heat = self.add_heat(heat, box_list)
+
+        heat = self.add_heat(heat, bbox_hist)
         if verbose:
             plt.imshow(heat, cmap='hot')
             plt.savefig(writeup_imgs_dir + "heatmap_original.jpg")

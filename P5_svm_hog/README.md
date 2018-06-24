@@ -1,37 +1,152 @@
-# Vehicle Detection
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+# File Structure
+output_images:   all results saved for debugging
+writeup_results: results for writeup
 
 
-In this project, your goal is to write a software pipeline to detect vehicles in a video (start with the test_video.mp4 and later implement on full project_video.mp4), but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
+[//]: # (Image References)
+[HSV_HOG]: ./SubmissionData/output_images/hog_params/HSV_ori_15_pixPcell_8_cellPblock_2hog_visuallize.jpg
+[RGB_HOG]: ./SubmissionData/output_images/hog_params/RGB_ori_15_pixPcell_8_cellPblock_2hog_visuallize.jpg
+[YUV_HOG_8]: ./SubmissionData/output_images/hog_params/YUV_ori_15_pixPcell_8_cellPblock_2hog_visuallize.jpg
+[YUV_HOG_16]: ./SubmissionData/output_images/hog_params/YUV_ori_15_pixPcell_16_cellPblock_2hog_visuallize.jpg
+[Heat_map]: TODO: add heatmap image 
+[video1]: ./SubmissionData/project_video.mp4
 
-Creating a great writeup:
----
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
 
-You can submit your writeup in markdown or use another method and submit a pdf instead.
+# Experiments
 
-The Project
----
+### Parameters:
+HOG is performed using `RGB` images, with 15 HOG orientations, 
+using 8  HOG pixels per cell, and 2 HOG cells per block. <br/>
+HOG block normalization used 'L2-Hys'. This means L2-norm followed by limiting the maximum 
+values to 0.2 (Hys stands for hysteresis) and renormalization using L2-norm. 
 
-The goals / steps of this project are the following:
+Heat map with pixel values larger than 1 are treated as detected vehicle pixels. <br/>
 
-* Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images and train a classifier Linear SVM classifier
-* Optionally, you can also apply a color transform and append binned color features, as well as histograms of color, to your HOG feature vector. 
-* Note: for those first two steps don't forget to normalize your features and randomize a selection for training and testing.
-* Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
-* Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
-* Estimate a bounding box for vehicles detected.
+It took 38.85 Seconds to train SVC, with 80% images as training, and 20% as validation. 
+Test Accuracy of SVC =  0.9703
 
-Here are links to the labeled data for [vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicle](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip) examples to train your classifier.  These example images come from a combination of the [GTI vehicle image database](http://www.gti.ssr.upm.es/data/Vehicle_database.html), the [KITTI vision benchmark suite](http://www.cvlibs.net/datasets/kitti/), and examples extracted from the project video itself.   You are welcome and encouraged to take advantage of the recently released [Udacity labeled dataset](https://github.com/udacity/self-driving-car/tree/master/annotations) to augment your training data.  
 
-Some example images for testing your pipeline on single frames are located in the `test_images` folder.  To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `ouput_images`, and include them in your writeup for the project by describing what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
 
-**As an optional challenge** Once you have a working pipeline for vehicle detection, add in your lane-finding algorithm from the last project to do simultaneous lane-finding and vehicle detection!
+### Reason for Choose parameters:
 
-**If you're feeling ambitious** (also totally optional though), don't stop there!  We encourage you to go out and take video of your own, and show us how you would implement this project on a new video!
+HOG features are plotted for varies choice of HOG parameters and color spaces. The ones that 
+can generate more distinctive HOG images for car and no-car images are chosen.
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+Reason for choose YUV:  <br/>
+YUV gives more distinct HOG features between car and no-car images across all channels, as shown
+ in Figure 1, 2, 3, which are HOG features for each channel in HSV, RGB and YUV color spaces.<br/>
+The first row holds car images, the second row is for no-car images.<br/>
+
+Reason for choose 8 pixels per cell: <br/>
+8 pixels per cell gives richer details. As shown in Figure 3 and Figure 4, YUV using 8 pixels per cell
+ has more details in HOG image than using 16 pixels per cell.<br/>
+
+![alt text][HSV_HOG]
+Figure 1: HSV 15 orientations, 8 pixels per cell, and 2 cells per block:<br/><br/><br/>
+
+![alt text][RGB_HOG]
+Figure 2: RGB 15 orientations, 8 pixels per cell, and 2 cells per block:<br/><br/><br/>
+
+![alt text][YUV_HOG_8]
+Figure 3: YUV 15 orientations, 8 pixels per cell, and 2 cells per block:<br/><br/><br/>
+
+![alt text][YUV_HOG_16]
+Figure 4: YUV 15 orientations, 16 pixels per cell, and 2 cells per block:<br/><br/><br/>
+
+
+
+
+Scp source dest 
+
+Upload detection_refactor/
+
+scp -r ./detection_refactor/ jinz1@128.237.99.172:/home/jinz1/Jin/Intersection_TrafficFlow/
+
+Download snapshots 
+scp -r jinz1@128.237.99.172:/home/jinz1/Jin/Intersection_TrafficFlow/detection/detector/snapshots ./
+
+
+
+
+
+
+# TODO
+1. make the svm train parameter same as testing part
+2. feature extraction combine code for individual window and whole image
+
+# functions from Udacity CarND online course
+draw_boxes
+inside Course_code/6_svm_hog/Code
+
+train_svm  is from search_classify.py
+find_cars   from    hog_subsample.py
+
+# Online githubs
+I have taken some ideas from the following githubs, and also the Udacity CarND course.
+1. Took idea from the following github to do sliding window on different scales, with different 
+region of interests. 
+`https://github.com/tatsuyah/vehicle-detection/blob/ed29606d3a66e1ff6d8a4d992f56b52c7a5b1c06/README.md`
+
+2. Used idea from the following github to construct heatmap using historial frames:
+1 + len(det.prev_rects)//2 
+Looking at previous 15 frames, if more than half of the previous frames contain the car, 
+then it's a car
+
+`https://github.com/jeremy-shannon/CarND-Vehicle-Detection`
+
+3. Took idea from the following github of not use color hist not so useful, and only used HOG features.
+`https://github.com/TusharChugh/Vehicle-Detection-HOG`
+
+# example save trained model
+
+# accuracy
+Images are shuffled and spitted into train , test
+RGB --> YUV --> HOG
+
+0.9     use 50 images no car and car 
+0.9623  use all images 
+
+0.15 test data
+
+Using: 9 orientations 8 pixels per cell and 2 cells per block
+Feature vector length: 5292
+32.02 Seconds to train SVC...
+Test Accuracy of SVC =  0.9595
+
+# result 
+55.5 Seconds to train SVC...
+Test Accuracy of SVC =  0.9688
+
+
+HOG hyper parameter:
+block_norm = 'L2-Hys'
+Normalization using L2-norm, followed by limiting the maximum values to 0.2 
+(Hys stands for hysteresis) and renormalization using L2-norm
+
+# Explain Function implementations
+
+input:
+HOG parameters,
+car images folder (N imgs),
+no-car images folder (M imgs)
+flag visualize : save HOG feature and HOG hist
+output:
+train set, test set
+txt file, N rows, each rows stores [HOG feature flatten and normalized   |  label]
+(label = 1 for vehicle, label = 0 for non-vehicle)
+
+steps:
+read images from vehicle directory,and non-vehicle directory
+
+extract HOG feature for each image
+car :  n x [HOG_featuer_length | 1 (class)] numpy array
+no car: m x [HOG_featuer_length | 0 (class)] numpy array
+
+flag visualize = true:   save one car and no-car HOG feature as image
+and histogram image
+
+shuffle and split into test and train set   8:2
+test: num_test x [HOG_featuer_length | class] numpy array
+train: num_train x [HOG_featuer_length | class] numpy array
 

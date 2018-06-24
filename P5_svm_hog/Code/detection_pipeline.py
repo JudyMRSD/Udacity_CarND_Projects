@@ -21,6 +21,9 @@ HOG_Pixel_Per_Cell = 8  # HOG pixels per cell
 HOG_Cells_Per_Block = 2  # HOG cells per block
 Thresh_Heatmap = 1
 
+# number of history frames to keep for more rubust heatmap
+Hist_Len = 15
+
 Svc_Pickle =  "../Data/model/svc_model.p"
 Writeup_Imgs_Dir = "../Data/output_images/"
 Video_Folder = "../Data/input_videos/"
@@ -34,6 +37,7 @@ class DetectionPipeline:
         self.imgUtil = ImgUtil()
         self.paramUtil = ParamUtil()
         self.model_dict = {}
+        self.bbox_hist = []
 
     def train_svm(self, data_folder):
         X_train, X_test, y_train, y_test, X_scaler  = self.feature_util.prep_feature_dataset(data_folder)
@@ -45,6 +49,7 @@ class DetectionPipeline:
         self.svc.fit(X_train, y_train)
         self.model_dict['svc_model'] =  self.svc
         self.model_dict['X_scaler'] = X_scaler
+        # include  time as part of model name to avoid overwrite good model
         pickle.dump(self.model_dict, open(Svc_Pickle, "wb" ))
 
         t2 = time.time()
@@ -70,9 +75,14 @@ class DetectionPipeline:
             out_img, bbox_list = self.feature_util.find_cars(img, svc_model, ystart, ystop, X_scaler, scale)
             if (len(bbox_list))>0:
                 bbox_scale.extend(bbox_list)
-        draw_img = self.imgUtil.heat_map(img, bbox_scale, Writeup_Imgs_Dir, Thresh_Heatmap, verbose)
+
+        self.bbox_hist.append(bbox_scale)
+        draw_img = self.imgUtil.heat_map(img, self.bbox_hist, Writeup_Imgs_Dir, Thresh_Heatmap, verbose)
         if (verbose):
             cv2.imwrite(Writeup_Imgs_Dir + str(img_idx)+"_bbox_heatmap.jpg", draw_img)
+        # only keep history bbox in recent frames
+        if (len(self.bbox_hist) > Hist_Len):
+            self.bbox_hist = self.bbox_hist[1:]
         return draw_img
 
     def detect_video(self, video_path):
@@ -101,15 +111,16 @@ class DetectionPipeline:
 
 def main():
     data_folder = "../Data/"
-    video_name = Video_Folder + "test_video.mp4"
+    # video_name = Video_Folder + "test_video.mp4"
+    video_name = Video_Folder + "project_video.mp4"
     train_data_folder = "../Data/train_test_data/"
 
     dp = DetectionPipeline()
 
-    dp.paramUtil.hog_param_vis(train_data_folder, Writeup_Imgs_Dir)
-    image_path = '../Data/test_images/test4.jpg'
+    #dp.paramUtil.hog_param_vis(train_data_folder, Writeup_Imgs_Dir)
+    # image_path = '../Data/test_images/test4.jpg'
     # TODO: save scalar too
-    dp.train_svm(train_data_folder)
+    # dp.train_svm(train_data_folder)
     # img = mpimg.imread(image_path)
     # dp.detect_image(img, 0,verbose=True)
     dp.detect_video(video_name)
