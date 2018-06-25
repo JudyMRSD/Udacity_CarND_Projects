@@ -75,27 +75,21 @@ class DetectionPipeline:
         for scale, ystart, ystop in zip(scales, ystarts, ystops):
             out_img, bbox_list = self.feature_util.find_cars(img, svc_model, ystart, ystop, X_scaler, scale)
             if (verbose):
-                print("scale", scale)
-                print("bbox_list", len(bbox_list))
                 cv2.imwrite(Writeup_Imgs_Dir + str(scale) + "_bbox_detected.jpg", out_img)
             if (len(bbox_list))>0:
                 bbox_scale.extend(bbox_list)
-        print("np.array(bbox_scale).shape", np.array(bbox_scale).shape[0])
         if (len(bbox_scale) > 0):
             self.total_num_box += np.array(bbox_scale).shape[0] # num bbox in current frame, 2 (xmin, ymin), 2(xmax, ymax)
             self.bbox_hist.append(bbox_scale)  # (num frames, num bbox in current frame, 2 (xmin, ymin), 2(xmax, ymax))
 
         thresh_heatmap = len(self.bbox_hist) # at least 1 bbox contains that colation    at each frame (*len(self.bbox_hist))
-        # thresh_heatmap = 1
         draw_img, draw_heatmap = self.imgUtil.heat_map(img, self.bbox_hist, Writeup_Imgs_Dir, thresh_heatmap, verbose)
         if (verbose):
             cv2.imwrite(Writeup_Imgs_Dir + str(img_idx)+"_bbox_heatmap.jpg", draw_img)
         # only keep history bbox in recent frames
         if (len(self.bbox_hist) > Hist_Len):
             self.total_num_box -= np.array(bbox_scale).shape[0] # (num bbox in current frame, 2 (xmin, ymin), 2(xmax, ymax))
-            print("np.array(self.bbox_hist)[1:]", np.array(self.bbox_hist)[1:].shape)
             self.bbox_hist = self.bbox_hist[1:]
-            print("self.bbox_hist", np.array(self.bbox_hist).shape)
         return draw_img, draw_heatmap
 
     def detect_video(self, video_path):
@@ -118,8 +112,6 @@ class DetectionPipeline:
             if success:
                 draw_img, heatmap = self.detect_image(frame, img_idx=i, verbose = False)
                 out_video.write(draw_img)
-                print("draw_img", draw_img.shape)
-                print("heatmap", heatmap.shape)
                 out_heatmap_video.write(heatmap)
             else:
                 print("ERROR: failed to read frame "+str(i))
@@ -128,8 +120,6 @@ class DetectionPipeline:
 
 
 def main():
-    data_folder = "../Data/"
-    # video_name = Video_Folder + "test_video.mp4"
     video_name = Video_Folder + "project_video.mp4"
     train_data_folder = "../Data/train_test_data/"
 
@@ -140,10 +130,10 @@ def main():
     img  = cv2.imread(image_path)
     dp.detect_image(img, 0,verbose=True)
     # Train SVM
-    # dp.train_svm(train_data_folder)
+    dp.train_svm(train_data_folder)
 
     # Run detection on a video
-    # dp.detect_video(video_name)
+    dp.detect_video(video_name)
 
 if __name__ == "__main__":
 

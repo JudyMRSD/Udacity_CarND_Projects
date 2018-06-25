@@ -44,7 +44,6 @@ class FeatureUtil:
             hog_channel = np.expand_dims(hog_channel, axis = num_dim_hog_single_channel)
             hog_features.append(hog_channel)
         hog_features_all = np.concatenate([hog_features[i] for i in range(channels)], axis=num_dim_hog_single_channel) # (7, 7, 2, 2, 15)
-        # print("hog_features_all.shape", hog_features_all.shape) # (7, 7, 6, 2, 15)
         return hog_features_all
 
     # use all channels to extract HOG features
@@ -98,7 +97,6 @@ class FeatureUtil:
         # 2. sliding_window
         # 3. refine_bbox
         draw_img = np.copy(img)
-        # img = img.astype(np.float32) / 255
 
         img_tosearch = img[ystart:ystop, :, :]
         # downscale image is the same as using larger window

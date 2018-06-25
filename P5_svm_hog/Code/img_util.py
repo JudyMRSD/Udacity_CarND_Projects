@@ -28,24 +28,15 @@ class ImgUtil:
         return feature_image
 
     def heatmap_gray_to_rgb(self, gray_heatmap):
-        print("gray_heatmap", gray_heatmap.shape)
         rgb_img = cv2.cvtColor(gray_heatmap.astype(np.uint8), cv2.COLOR_GRAY2RGB)
-        # rgb_img = cv2.applyColorMap(rgb_img, cv2.COLORMAP_JET)
-
-        # cmap = plt.get_cmap('jet')
-        # rgba_img = cmap(gray_heatmap)
-        # rgb_img = np.delete(rgba_img, 3, 2)# remove 'a' channel for transparency
         return rgb_img
 
     def add_heat(self, heatmap, bbox_hist):
         # Iterate through list of bboxes
-        print("bbox_hist", bbox_hist)
         bbox_hist = np.array(bbox_hist)
 
         for bbox_list in bbox_hist:
-            #print("bbox_list", bbox_list)
             for box in bbox_list:
-                #print("box", box)
                 # Add += 1 for all pixels inside each bbox
                 # Assuming each "box" takes the form ((x1, y1), (x2, y2))
                 heatmap[box[0][1]:box[1][1], box[0][0]:box[1][0]] += 1
@@ -58,8 +49,6 @@ class ImgUtil:
         # output: heatmap
         heat = np.zeros_like(image[:, :, 0]).astype(np.float)
         # Add heat to each box in box list
-        print("zeros heatmap", heat.shape)
-
         heat = self.add_heat(heat, bbox_hist)
         if verbose:
             plt.imshow(heat, cmap='hot')

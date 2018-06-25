@@ -30,7 +30,6 @@ class ParamUtil:
         # 4: 1 original image + 3 channels hog for image
         # 2: car, no car
 
-
         for ori in hog_orient_list:
             for pixPcell in hog_pixel_per_cell_list:
                 for cellPblock in hog_cell_per_block_list:
@@ -51,7 +50,6 @@ class ParamUtil:
                            hog_cell_per_block, hog_color_space):
         image = self.imgUtil.convert_color(image, hog_color_space)
         channels = image.shape[-1]
-        print("channels", channels)
 
         ax[ax_row][0].imshow(image)
         ax[ax_row][0].set_title(image_class)
@@ -64,7 +62,5 @@ class ParamUtil:
                                      block_norm='L2-Hys',
                                      transform_sqrt=True,
                                      visualise=True, feature_vector=False)
-            print("i", i)
-
             ax[ax_row][i+1].imshow(hog_img, cmap='gray')
             ax[ax_row][i+1].set_title(hog_color_space[i])
