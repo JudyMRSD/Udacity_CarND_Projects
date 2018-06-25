@@ -27,6 +27,16 @@ class ImgUtil:
 
         return feature_image
 
+    def heatmap_gray_to_rgb(self, gray_heatmap):
+        print("gray_heatmap", gray_heatmap.shape)
+        rgb_img = cv2.cvtColor(gray_heatmap.astype(np.uint8), cv2.COLOR_GRAY2RGB)
+        # rgb_img = cv2.applyColorMap(rgb_img, cv2.COLORMAP_JET)
+
+        # cmap = plt.get_cmap('jet')
+        # rgba_img = cmap(gray_heatmap)
+        # rgb_img = np.delete(rgba_img, 3, 2)# remove 'a' channel for transparency
+        return rgb_img
+
     def add_heat(self, heatmap, bbox_hist):
         # Iterate through list of bboxes
         print("bbox_hist", bbox_hist)
@@ -48,6 +58,7 @@ class ImgUtil:
         # output: heatmap
         heat = np.zeros_like(image[:, :, 0]).astype(np.float)
         # Add heat to each box in box list
+        print("zeros heatmap", heat.shape)
 
         heat = self.add_heat(heat, bbox_hist)
         if verbose:
@@ -70,7 +81,8 @@ class ImgUtil:
         # (if 2 pixels are connected in vertical or horizontal orientation, they are same object)
         labels = label(heatmap)
         draw_img = self.draw_labeled_bboxes(np.copy(image), labels)
-        return draw_img
+        draw_heatmap = self.draw_labeled_bboxes(self.heatmap_gray_to_rgb(heatmap), labels)
+        return draw_img, draw_heatmap
 
     def draw_labeled_bboxes(self, img, labels):
         # Iterate through all detected cars
@@ -83,6 +95,6 @@ class ImgUtil:
             # Define a bounding box based on min/max x and y
             bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
             # Draw the box on the image
-            cv2.rectangle(img, bbox[0], bbox[1], (0, 0, 255), 6)
+            cv2.rectangle(img, bbox[0], bbox[1], (0, 255, 0), 6)
         # Return the image
         return img

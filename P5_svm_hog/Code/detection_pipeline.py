@@ -21,7 +21,7 @@ HOG_Pixel_Per_Cell = 8  # HOG pixels per cell
 HOG_Cells_Per_Block = 2  # HOG cells per block
 
 # number of history frames to keep for more rubust heatmap
-Hist_Len = 2
+Hist_Len = 5
 
 Svc_Pickle =  "../Data/model/svc_model.p"
 Writeup_Imgs_Dir = "../Data/output_images/"
@@ -82,7 +82,7 @@ class DetectionPipeline:
 
         thresh_heatmap = 1 + self.total_num_box//2
 
-        draw_img = self.imgUtil.heat_map(img, self.bbox_hist, Writeup_Imgs_Dir, thresh_heatmap, verbose)
+        draw_img, draw_heatmap = self.imgUtil.heat_map(img, self.bbox_hist, Writeup_Imgs_Dir, thresh_heatmap, verbose)
         if (verbose):
             cv2.imwrite(Writeup_Imgs_Dir + str(img_idx)+"_bbox_heatmap.jpg", draw_img)
         # only keep history bbox in recent frames
@@ -91,7 +91,7 @@ class DetectionPipeline:
             print("np.array(self.bbox_hist)[1:]", np.array(self.bbox_hist)[1:].shape)
             self.bbox_hist = self.bbox_hist[1:]
             print("self.bbox_hist", np.array(self.bbox_hist).shape)
-        return draw_img
+        return draw_img, draw_heatmap
 
     def detect_video(self, video_path):
 
@@ -100,17 +100,22 @@ class DetectionPipeline:
         frame_ids = np.arange(1, video_length)
 
         video_out_name = Writeup_Imgs_Dir + os.path.splitext(os.path.basename(video_path))[0]
+        heatmap_video = Writeup_Imgs_Dir + "heatmap" +os.path.splitext(os.path.basename(video_path))[0]
         video_writer = cv2.VideoWriter_fourcc(*'mp4v')
         fps = int(cap.get(cv2.CAP_PROP_FPS))
         frame_wid = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         out_video = cv2.VideoWriter(video_out_name, video_writer, fps, (frame_wid, frame_height))
+        out_heatmap_video = cv2.VideoWriter(heatmap_video, video_writer, fps, (frame_wid, frame_height))
 
         for i in tqdm.tqdm(frame_ids):
             success, frame = cap.read()
             if success:
-                draw_img = self.detect_image(frame, img_idx=i, verbose = False)
+                draw_img, heatmap = self.detect_image(frame, img_idx=i, verbose = False)
                 out_video.write(draw_img)
+                print("draw_img", draw_img.shape)
+                print("heatmap", heatmap.shape)
+                out_heatmap_video.write(heatmap)
             else:
                 print("ERROR: failed to read frame "+str(i))
         cap.release()
@@ -119,8 +124,8 @@ class DetectionPipeline:
 
 def main():
     data_folder = "../Data/"
-    # video_name = Video_Folder + "test_video.mp4"
-    video_name = Video_Folder + "project_video.mp4"
+    video_name = Video_Folder + "test_video.mp4"
+    # video_name = Video_Folder + "project_video.mp4"
     train_data_folder = "../Data/train_test_data/"
 
     dp = DetectionPipeline()
