@@ -80,7 +80,7 @@ class DetectionPipeline:
             self.total_num_box += np.array(bbox_scale).shape[0] # num bbox in current frame, 2 (xmin, ymin), 2(xmax, ymax)
             self.bbox_hist.append(bbox_scale)  # (num frames, num bbox in current frame, 2 (xmin, ymin), 2(xmax, ymax))
 
-        thresh_heatmap = 2 * len(self.bbox_hist) # more than 2 bbox contains that colation    at each frame (*len(self.bbox_hist))
+        thresh_heatmap = len(self.bbox_hist) # at least 1 bbox contains that colation    at each frame (*len(self.bbox_hist))
         # thresh_heatmap = 1
         draw_img, draw_heatmap = self.imgUtil.heat_map(img, self.bbox_hist, Writeup_Imgs_Dir, thresh_heatmap, verbose)
         if (verbose):
@@ -100,7 +100,7 @@ class DetectionPipeline:
         frame_ids = np.arange(1, video_length)
 
         video_out_name = Writeup_Imgs_Dir + os.path.splitext(os.path.basename(video_path))[0]
-        heatmap_video = Writeup_Imgs_Dir + "heatmap" +os.path.splitext(os.path.basename(video_path))[0]
+        heatmap_video = Writeup_Imgs_Dir + "heatmap_" +os.path.splitext(os.path.basename(video_path))[0]
         video_writer = cv2.VideoWriter_fourcc(*'mp4v')
         fps = int(cap.get(cv2.CAP_PROP_FPS))
         frame_wid = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -124,13 +124,13 @@ class DetectionPipeline:
 
 def main():
     data_folder = "../Data/"
-    video_name = Video_Folder + "test_video.mp4"
-    # video_name = Video_Folder + "project_video.mp4"
+    # video_name = Video_Folder + "test_video.mp4"
+    video_name = Video_Folder + "project_video.mp4"
     train_data_folder = "../Data/train_test_data/"
 
     dp = DetectionPipeline()
 
-    #dp.paramUtil.hog_param_vis(train_data_folder, Writeup_Imgs_Dir)
+    # dp.paramUtil.hog_param_vis(train_data_folder, Writeup_Imgs_Dir)
     # image_path = '../Data/test_images/test4.jpg'
     # TODO: save scalar too
     # dp.train_svm(train_data_folder)
