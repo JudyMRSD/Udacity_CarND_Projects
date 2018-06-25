@@ -80,8 +80,8 @@ class DetectionPipeline:
             self.total_num_box += np.array(bbox_scale).shape[0] # num bbox in current frame, 2 (xmin, ymin), 2(xmax, ymax)
             self.bbox_hist.append(bbox_scale)  # (num frames, num bbox in current frame, 2 (xmin, ymin), 2(xmax, ymax))
 
-        thresh_heatmap = 1 + self.total_num_box//2
-
+        thresh_heatmap = 2 * len(self.bbox_hist) # more than 2 bbox contains that colation    at each frame (*len(self.bbox_hist))
+        # thresh_heatmap = 1
         draw_img, draw_heatmap = self.imgUtil.heat_map(img, self.bbox_hist, Writeup_Imgs_Dir, thresh_heatmap, verbose)
         if (verbose):
             cv2.imwrite(Writeup_Imgs_Dir + str(img_idx)+"_bbox_heatmap.jpg", draw_img)
