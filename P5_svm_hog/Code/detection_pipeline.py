@@ -66,13 +66,18 @@ class DetectionPipeline:
         X_scaler = svc_model_dict['X_scaler']
 
         bbox_scale = []
-        # hyper parameter from https://github.com/TusharChugh/Vehicle-Detection-HOG/blob/master/src/vehicle-detection.ipynb
+        # scales, ystarts, ystops hyper parameter was taken from
+        # https://github.com/TusharChugh/Vehicle-Detection-HOG/blob/master/src/vehicle-detection.ipynb
         scales = [1, 1.5, 2, 2.5, 3]
         ystarts = [400, 400, 450, 450, 460]
         ystops = [528, 550, 620, 650, 700]
 
         for scale, ystart, ystop in zip(scales, ystarts, ystops):
             out_img, bbox_list = self.feature_util.find_cars(img, svc_model, ystart, ystop, X_scaler, scale)
+            if (verbose):
+                print("scale", scale)
+                print("bbox_list", len(bbox_list))
+                cv2.imwrite(Writeup_Imgs_Dir + str(scale) + "_bbox_detected.jpg", out_img)
             if (len(bbox_list))>0:
                 bbox_scale.extend(bbox_list)
         print("np.array(bbox_scale).shape", np.array(bbox_scale).shape[0])
@@ -130,13 +135,15 @@ def main():
 
     dp = DetectionPipeline()
 
-    # dp.paramUtil.hog_param_vis(train_data_folder, Writeup_Imgs_Dir)
-    # image_path = '../Data/test_images/test4.jpg'
-    # TODO: save scalar too
+    # Detect on a single image
+    image_path = '../Data/test_images/test1.jpg'
+    img  = cv2.imread(image_path)
+    dp.detect_image(img, 0,verbose=True)
+    # Train SVM
     # dp.train_svm(train_data_folder)
-    # img = mpimg.imread(image_path)
-    # dp.detect_image(img, 0,verbose=True)
-    dp.detect_video(video_name)
+
+    # Run detection on a video
+    # dp.detect_video(video_name)
 
 if __name__ == "__main__":
 

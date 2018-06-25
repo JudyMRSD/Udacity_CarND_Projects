@@ -63,6 +63,7 @@ class ImgUtil:
         heat = self.add_heat(heat, bbox_hist)
         if verbose:
             plt.imshow(heat, cmap='hot')
+            plt.colorbar()
             plt.savefig(writeup_imgs_dir + "heatmap_original.jpg")
             plt.clf()
 
