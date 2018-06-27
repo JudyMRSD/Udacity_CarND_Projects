@@ -86,10 +86,12 @@ class DataUtil():
             adj_ang = angle+angle_adjust[i]
             # data augmentation: flipping
             flipped_img, flipped_ang = self.aug_flip(rgb_image, adj_ang)
-            shifted_img, shifted_ang = self.aug_shift(rgb_image, adj_ang)
+            shifted_imgs, shifted_angs = self.aug_shift(rgb_image, adj_ang)
             # save img and angle
-            images.extend([rgb_image, flipped_img, shifted_img])
-            angles.extend([adj_ang, flipped_ang, shifted_ang])
+            images.extend([rgb_image, flipped_img])
+            angles.extend([adj_ang, flipped_ang])
+            images.extend(shifted_imgs)
+            angles.extend(shifted_angs)
             # TODO: data augmentation: ligntness and brightness
             # https://github.com/mvpcom/Udacity-CarND-Project-3/blob/master/model.ipynb
         return images, angles
@@ -101,21 +103,45 @@ class DataUtil():
         angle = -angle
         return img, angle
 
-    def aug_shift(self, img, angle):
+    def aug_shift(self, image, angle, num_shift = 10):
         # took from https://medium.com/@ValipourMojtaba/my-approach-for-project-3-2545578a9319
         # including hyper parameters
-        img_w, img_h, _ = img.shape
-        x_shift_range = 50
-        trans_x = x_shift_range * np.random.rand()
-        y_shift_range = 5
-        trans_y = y_shift_range * np.random.rand()
-        # for every pixel shift in x direction, change angle by angle_per_pix = 0.8
-        angle_per_pix = 0.8
-        shifted_ang = angle + trans_x/x_shift_range * angle_per_pix
-        affine_matrix = np.array([[1, 0 , trans_x],
-                                  [0, 1, trans_y]], dtype = np.float32)
-        shifted_img = cv2.warpAffine(img, affine_matrix, (img_w, img_h))
-        return shifted_img, shifted_ang
+
+
+        shifted_images = []
+        shifted_angles = []
+        # rows, cols, _ = image.shape
+        # transRange = 100
+        # numPixels = 10
+        # valPixels = 0.4
+        #
+        # for i in range (num_shift):
+        #     transX = transRange * np.random.uniform() - transRange / 2
+        #     shifted_angle = angle + transX / transRange * 2 * valPixels
+        #     transY = numPixels * np.random.uniform() - numPixels / 2
+        #     transMat = np.float32([[1, 0, transX], [0, 1, transY]])
+        #     shifted_img = cv2.warpAffine(image, transMat, (cols, rows))
+        #     shifted_images.append(shifted_img)
+        #     shifted_angles.append(shifted_angle)
+        # return shifted_images, shifted_angles
+
+        for i in range (num_shift):
+            # my code
+            img_h, img_w, _ = image.shape
+            x_shift_range = 100
+            # np.random.rand() - 0.5  random number (0, 1) -> (-0.5 , 0.5)
+            trans_x = x_shift_range * (np.random.rand() - 0.5)
+            y_shift_range = 5
+            trans_y = y_shift_range * (np.random.rand() - 0.5)
+            # for every pixel shift in x direction, change angle by angle_per_pix
+            angle_per_pix = 0.8
+            shifted_ang = angle + trans_x/x_shift_range * angle_per_pix
+            affine_matrix = np.array([[1, 0 , trans_x],
+                                      [0, 1, trans_y]], dtype = np.float32)
+            shifted_img = cv2.warpAffine(image, affine_matrix, (img_w, img_h))
+            shifted_images.append(shifted_img)
+            shifted_angles.append(shifted_ang)
+        return shifted_images, shifted_angles
 
     def aug_light(self, rgb_img, angle):
         hsv_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2HSV)
