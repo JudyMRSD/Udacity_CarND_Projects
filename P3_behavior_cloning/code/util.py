@@ -72,60 +72,63 @@ class DataUtil():
         self.center_angle_col_idx = 3
         self.angle_correction = 0.2
 
-    def batch_img_angle(self, batch_sample):
+    def sample_img_ang(self, batch_sample, is_train):
         # use center, left and right images by making adjustment ot turning angle
         images = []
         angles = []
-        col_idx = [self.center_col_idx, self.left_col_idx, self.right_col_idx]
-        angle_adjust = [0,  self.angle_correction, -self.angle_correction]
-        angle = float(batch_sample[self.center_angle_col_idx])
+        if is_train:
+            col_idx = [self.center_col_idx, self.left_col_idx, self.right_col_idx]
+            angle_adjust = [0,  self.angle_correction, -self.angle_correction]
+            angle = float(batch_sample[self.center_angle_col_idx])
 
-        for i in col_idx:
-            bgr_image = cv2.imread(self.image_dir + batch_sample[i].split('/')[-1])
-            rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)  # convert color to RGB to match drive.py
-            adj_ang = angle+angle_adjust[i]
-            # data augmentation: flipping
-            flipped_img, flipped_ang = self.aug_flip(rgb_image, adj_ang)
-            shifted_imgs, shifted_angs = self.aug_shift(rgb_image, adj_ang)
-            # save img and angle
-            images.extend([rgb_image, flipped_img])
-            angles.extend([adj_ang, flipped_ang])
-            images.extend(shifted_imgs)
-            angles.extend(shifted_angs)
-            # TODO: data augmentation: ligntness and brightness
-            # https://github.com/mvpcom/Udacity-CarND-Project-3/blob/master/model.ipynb
+            for i in col_idx:
+                bgr_image = cv2.imread(self.image_dir + batch_sample[i].split('/')[-1])
+                rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)  # convert color to RGB to match drive.py
+                adj_ang = angle+angle_adjust[i]
+                # data augmentation: flipping half of the images
+                flipped_img, flipped_ang = self.aug_flip(rgb_image, adj_ang)
+                light_img, light_ang = self.aug_light(flipped_img, flipped_ang)
+                shifted_imgs, shifted_angs = self.aug_shift(flipped_img, flipped_ang)
+
+                # save img and angle
+                # images.extend([rgb_image, flipped_img])
+                # angles.extend([adj_ang, flipped_ang])
+
+                # if (abs(adj_ang) > self.angle_correction): # only keep half of the angles > 0.2
+                #     images.extend([rgb_image, flipped_img])
+                #     angles.extend([adj_ang, flipped_ang])
+
+                images.extend([rgb_image, flipped_img])
+                angles.extend([adj_ang, flipped_ang])
+                images.append(light_img)
+                angles.append(light_ang)
+                images.extend(shifted_imgs)
+                angles.extend(shifted_angs)
+        # no data agumentation on validation set
+        else:
+            center_img_name = self.image_dir + batch_sample[self.center_col_idx].split('/')[-1]
+            bgr_image = cv2.imread(center_img_name)
+            angle = float(batch_sample[self.center_angle_col_idx])
+            images.append(bgr_image)
+            angles.append(angle)
+
         return images, angles
 
     def aug_flip(self, img, angle):
-        # double the amount of left and right turn by flipping (left turn -> right turn)
-        img = cv2.flip(img, 1)
-        print("if img is none, flip does not return value", img.shape)
-        angle = -angle
+        if np.random.rand()>0.5:
+            # (left turn -> right turn)
+            img = cv2.flip(img, 1)
+            print("if img is none, flip does not return value", img.shape)
+            angle = -angle
         return img, angle
 
-    def aug_shift(self, image, angle, num_shift = 10):
+    def aug_shift(self, image, angle):
         # took from https://medium.com/@ValipourMojtaba/my-approach-for-project-3-2545578a9319
         # including hyper parameters
 
-
         shifted_images = []
         shifted_angles = []
-        # rows, cols, _ = image.shape
-        # transRange = 100
-        # numPixels = 10
-        # valPixels = 0.4
-        #
-        # for i in range (num_shift):
-        #     transX = transRange * np.random.uniform() - transRange / 2
-        #     shifted_angle = angle + transX / transRange * 2 * valPixels
-        #     transY = numPixels * np.random.uniform() - numPixels / 2
-        #     transMat = np.float32([[1, 0, transX], [0, 1, transY]])
-        #     shifted_img = cv2.warpAffine(image, transMat, (cols, rows))
-        #     shifted_images.append(shifted_img)
-        #     shifted_angles.append(shifted_angle)
-        # return shifted_images, shifted_angles
-
-        for i in range (num_shift):
+        for i in range (self.num_shift):
             # my code
             img_h, img_w, _ = image.shape
             x_shift_range = 100
@@ -145,14 +148,18 @@ class DataUtil():
 
     def aug_light(self, rgb_img, angle):
         hsv_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2HSV)
-        # todo: finish
-        # https://github.com/mvpcom/Udacity-CarND-Project-3/blob/master/model.ipynb
+        # Reference: https://github.com/mvpcom/Udacity-CarND-Project-3/blob/master/model.ipynb
+        rand_v_channel = 0.25 + np.random.rand()
+        hsv_img[:,:,2] = hsv_img[:,:,2]  * rand_v_channel
+        aug_light_img = cv2.cvtColor(hsv_img, cv2.COLOR_HSV2RGB)
+        # angle not changed, directly returned
+        return aug_light_img, angle
 
     def aug_shadow(self):
         # https: // github.com / jeremy - shannon / CarND - Behavioral - Cloning - Project
         pass
 
-    def generator(self, samples, batch_size=32):
+    def generator(self, samples, is_train, batch_size=32):
         num_samples = len(samples)
         print("num_samples", num_samples)
         while 1:  # Loop forever so the generator never terminates
@@ -162,7 +169,7 @@ class DataUtil():
                 images = []
                 angles = []
                 for batch_sample in batch_samples:
-                    sample_images, sample_angles = self.batch_img_angle(batch_sample)
+                    sample_images, sample_angles = self.sample_img_ang(batch_sample, is_train)
                     images.extend(sample_images)
                     angles.extend(sample_angles)
                 X_train = np.array(images)
@@ -172,6 +179,7 @@ class DataUtil():
     def train_val_generator(self, csv_path,image_dir, debug_dir):
         self.image_dir = image_dir
         self.debug_dir = debug_dir
+        self.num_shift = 10
         samples = []
         with open(csv_path) as csvfile:
             reader = csv.reader(csvfile)
@@ -182,9 +190,9 @@ class DataUtil():
         train_samples, validation_samples = train_test_split(samples, test_size=0.2)
         num_train_samples = len(train_samples)
         num_validation_samples = len(validation_samples)
-        train_generator = self.generator(train_samples, batch_size=100)
+        train_generator = self.generator(train_samples, is_train = True, batch_size=100)
 
-        validation_generator = self.generator(validation_samples, batch_size=32)
+        validation_generator = self.generator(validation_samples,  is_train=False, batch_size=32)
 
         return  num_train_samples, num_validation_samples, train_generator, validation_generator
 
@@ -197,21 +205,37 @@ class DataUtil():
 class VisualizeUtil():
     def __init__(self):
         pass
-    def vis_generator(self, generator, name, save_dir):
+    def vis_generator(self, dataUtil, generator, name, save_dir):
+        tmp_num_shift = dataUtil.num_shift
+        dataUtil.num_shift = 1
         images, angles = generator.__next__()
         plt.hist(angles, bins='auto')
         plt.title(name)
         plt.xlabel("angle")
         plt.ylabel("count")
         plt.savefig(save_dir + name + ".png")
-        # 4: original, flipped, shifted
-        ax_row = 3
-        ax_col = 1
+        # 4: original, flipped, shifted, adjust light
+        # set Num_Shift = 1 to use this part (so the first 4 images
+        # are from different modifications on image)
+        ax_row = 2
+        ax_col = 2
         fig, ax = plt.subplots(ax_row, ax_col, figsize=(16, 9))
-        img_vis = images[:ax_row]
-        for i, img in enumerate(img_vis):
-            ax[i].imshow(img)
+        # todo: plot a line indicating angle on the image
+        original = images[0]
+        flipped = images[1]
+        shifted = images[2]
+        adjust_light = images[3]
+        ax[0][0].set_title("original")
+        ax[0][0].imshow(original)
+        ax[0][1].set_title("flipped")
+        ax[0][1].imshow(flipped)
+        ax[1][0].set_title("shifted")
+        ax[1][0].imshow(shifted)
+        ax[1][1].set_title("adjust_light")
+        ax[1][1].imshow(adjust_light)
         plt.savefig(save_dir + "vis_aug_imgs.jpg")
+
+        dataUtil.num_shift = tmp_num_shift
 
 
 
