@@ -38,7 +38,7 @@ class Pipeline():
             self.dataUtil.train_val_generator(csv_path = Driving_Log_Path, image_dir=Img_Data_Dir, debug_dir = Debug_Dir)
 
         if Vis:
-            self.visUtil.vis_generator(self.dataUtil, train_generator, "after_flip_train_angle", save_dir=Debug_Dir)
+            self.visUtil.vis_generator(train_generator, "after_flip_train_angle", save_dir=Debug_Dir)
 
         print("build model")
         model = self.modelUtil.create_network(Top_Crop, Bottom_Crop, Input_Shape)

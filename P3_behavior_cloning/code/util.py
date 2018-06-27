@@ -21,11 +21,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 NumSamples = -1  # 32 # -1  use all samples
+Vis = True # visualize output for debugging
 
 class ModelUtil():
     # input : RGB image, output: steering angle
     def __init__(self):
         self.a = 0
+
 
     @staticmethod
     def create_network(top_crop, bottom_crop, input_shape):
@@ -71,6 +73,7 @@ class DataUtil():
         self.right_col_idx = 2
         self.center_angle_col_idx = 3
         self.angle_correction = 0.2
+        self.visUtil = VisualizeUtil()
 
     def sample_img_ang(self, batch_sample, is_train):
         # use center, left and right images by making adjustment ot turning angle
@@ -104,6 +107,7 @@ class DataUtil():
                 angles.append(light_ang)
                 images.extend(shifted_imgs)
                 angles.extend(shifted_angs)
+
         # no data agumentation on validation set
         else:
             center_img_name = self.image_dir + batch_sample[self.center_col_idx].split('/')[-1]
@@ -115,10 +119,9 @@ class DataUtil():
         return images, angles
 
     def aug_flip(self, img, angle):
-        if np.random.rand()>0.5:
+        if np.random.rand()>0:
             # (left turn -> right turn)
             img = cv2.flip(img, 1)
-            print("if img is none, flip does not return value", img.shape)
             angle = -angle
         return img, angle
 
@@ -144,6 +147,7 @@ class DataUtil():
             shifted_img = cv2.warpAffine(image, affine_matrix, (img_w, img_h))
             shifted_images.append(shifted_img)
             shifted_angles.append(shifted_ang)
+
         return shifted_images, shifted_angles
 
     def aug_light(self, rgb_img, angle):
@@ -187,10 +191,14 @@ class DataUtil():
             for line in reader:
                 samples.append(line)
         samples=samples[0:NumSamples]
+        if Vis:
+            aug_imgs, aug_angles = self.sample_img_ang(samples[10], is_train=True)
+            self.visUtil.vis_img_aug(aug_imgs, aug_angles, self.debug_dir)
+
         train_samples, validation_samples = train_test_split(samples, test_size=0.2)
         num_train_samples = len(train_samples)
         num_validation_samples = len(validation_samples)
-        train_generator = self.generator(train_samples, is_train = True, batch_size=100)
+        train_generator = self.generator(train_samples, is_train = True, batch_size=32)
 
         validation_generator = self.generator(validation_samples,  is_train=False, batch_size=32)
 
@@ -205,37 +213,44 @@ class DataUtil():
 class VisualizeUtil():
     def __init__(self):
         pass
-    def vis_generator(self, dataUtil, generator, name, save_dir):
-        tmp_num_shift = dataUtil.num_shift
-        dataUtil.num_shift = 1
+    def vis_generator(self, generator, name, save_dir):
         images, angles = generator.__next__()
         plt.hist(angles, bins='auto')
         plt.title(name)
         plt.xlabel("angle")
         plt.ylabel("count")
         plt.savefig(save_dir + name + ".png")
+        plt.close()
+
+
+    def vis_img_aug(self, aug_imgs, aug_angles, save_dir):    # todo: plot a line indicating angle on the image
+        print("aug_imgs", len(aug_imgs))
+        images = aug_imgs[0:4]
         # 4: original, flipped, shifted, adjust light
         # set Num_Shift = 1 to use this part (so the first 4 images
         # are from different modifications on image)
+
         ax_row = 2
         ax_col = 2
         fig, ax = plt.subplots(ax_row, ax_col, figsize=(16, 9))
-        # todo: plot a line indicating angle on the image
+
         original = images[0]
         flipped = images[1]
-        shifted = images[2]
-        adjust_light = images[3]
+        adjust_light = images[2]
+        shifted = images[3]
+
         ax[0][0].set_title("original")
         ax[0][0].imshow(original)
         ax[0][1].set_title("flipped")
         ax[0][1].imshow(flipped)
-        ax[1][0].set_title("shifted")
-        ax[1][0].imshow(shifted)
-        ax[1][1].set_title("adjust_light")
-        ax[1][1].imshow(adjust_light)
+        ax[1][0].set_title("adjust_light")
+        ax[1][0].imshow(adjust_light)
+        ax[1][1].set_title("shifted")
+        ax[1][1].imshow(shifted)
         plt.savefig(save_dir + "vis_aug_imgs.jpg")
+        plt.close()
+        print("finished save image")
 
-        dataUtil.num_shift = tmp_num_shift
 
 
 
