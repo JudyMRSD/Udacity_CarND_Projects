@@ -13,26 +13,34 @@ from keras.layers import Cropping2D
 from keras.layers import Lambda, Flatten, Dense
 import cv2
 import numpy as np
-from util import ModelUtil, DataUtil
+from util import ModelUtil, DataUtil, VisualizeUtil
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 # TODO: load image as RGB (drive.py use RGB)
 ModelDir = "../data/model/"
 Driving_Log_Path = "../data/driving_log.csv"
 Img_Data_Dir = "../data/IMG/"
+Debug_Dir = "../data/debug/"
 Num_Epochs = 5
+Vis = False # visualize output for debugging
 
 class Pipeline():
     def __init__(self):
         print("init")
         self.learning_rate = 0.001
         self.modelUtil = ModelUtil()
-        self.dataUtil = DataUtil(Img_Data_Dir)
+        self.dataUtil = DataUtil()
+        self.visUtil = VisualizeUtil()
         print(self.learning_rate)
 
     def train(self, train_model_path):
         num_train_samples, num_validation_samples, train_generator, validation_generator = \
-            self.dataUtil.train_val_generator(csv_path = Driving_Log_Path)
+            self.dataUtil.train_val_generator(csv_path = Driving_Log_Path, image_dir=Img_Data_Dir, debug_dir = Debug_Dir)
+
+        if Vis:
+            self.visUtil.angle_hist(train_generator, "train_angle", save_dir=Debug_Dir)
+
+        print("build model")
         model = self.modelUtil.create_network(Top_Crop, Bottom_Crop, Input_Shape)
         # TODO: add callbacks
         # TODO: add data augmentation
@@ -40,12 +48,7 @@ class Pipeline():
                      ModelCheckpoint(filepath=train_model_path, monitor='val_loss', save_best_only=True)]
         print("num_train_samples",num_train_samples)
         print("num_validation_samples", num_validation_samples)
-        # model.fit_generator(train_generator,
-        #                     steps_per_epoch=num_train_samples,
-        #                     validation_data=validation_generator,
-        #                     validation_steps=num_validation_samples,
-        #                     epochs=5,
-        #                     verbose=1)
+
         model.fit_generator(train_generator,
                             samples_per_epoch= num_train_samples,
                             validation_data=validation_generator,
