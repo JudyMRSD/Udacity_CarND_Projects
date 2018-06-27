@@ -86,9 +86,10 @@ class DataUtil():
             adj_ang = angle+angle_adjust[i]
             # data augmentation: flipping
             flipped_img, flipped_ang = self.aug_flip(rgb_image, adj_ang)
+            shifted_img, shifted_ang = self.aug_shift(rgb_image, adj_ang)
             # save img and angle
-            images.extend([rgb_image, flipped_img])
-            angles.extend([adj_ang, flipped_ang])
+            images.extend([rgb_image, flipped_img, shifted_img])
+            angles.extend([adj_ang, flipped_ang, shifted_ang])
             # TODO: data augmentation: ligntness and brightness
             # https://github.com/mvpcom/Udacity-CarND-Project-3/blob/master/model.ipynb
         return images, angles
@@ -99,6 +100,31 @@ class DataUtil():
         print("if img is none, flip does not return value", img.shape)
         angle = -angle
         return img, angle
+
+    def aug_shift(self, img, angle):
+        # took from https://medium.com/@ValipourMojtaba/my-approach-for-project-3-2545578a9319
+        # including hyper parameters
+        img_w, img_h, _ = img.shape
+        x_shift_range = 50
+        trans_x = x_shift_range * np.random.rand()
+        y_shift_range = 5
+        trans_y = y_shift_range * np.random.rand()
+        # for every pixel shift in x direction, change angle by angle_per_pix = 0.8
+        angle_per_pix = 0.8
+        shifted_ang = angle + trans_x/x_shift_range * angle_per_pix
+        affine_matrix = np.array([[1, 0 , trans_x],
+                                  [0, 1, trans_y]], dtype = np.float32)
+        shifted_img = cv2.warpAffine(img, affine_matrix, (img_w, img_h))
+        return shifted_img, shifted_ang
+
+    def aug_light(self, rgb_img, angle):
+        hsv_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2HSV)
+        # todo: finish
+        # https://github.com/mvpcom/Udacity-CarND-Project-3/blob/master/model.ipynb
+
+    def aug_shadow(self):
+        # https: // github.com / jeremy - shannon / CarND - Behavioral - Cloning - Project
+        pass
 
     def generator(self, samples, batch_size=32):
         num_samples = len(samples)
@@ -130,7 +156,7 @@ class DataUtil():
         train_samples, validation_samples = train_test_split(samples, test_size=0.2)
         num_train_samples = len(train_samples)
         num_validation_samples = len(validation_samples)
-        train_generator = self.generator(train_samples, batch_size=32)
+        train_generator = self.generator(train_samples, batch_size=100)
 
         validation_generator = self.generator(validation_samples, batch_size=32)
 
@@ -145,11 +171,23 @@ class DataUtil():
 class VisualizeUtil():
     def __init__(self):
         pass
-    def angle_hist(self, generator, name, save_dir):
-        _, angles = generator.__next__()
+    def vis_generator(self, generator, name, save_dir):
+        images, angles = generator.__next__()
         plt.hist(angles, bins='auto')
         plt.title(name)
+        plt.xlabel("angle")
+        plt.ylabel("count")
         plt.savefig(save_dir + name + ".png")
+        # 4: original, flipped, shifted
+        ax_row = 3
+        ax_col = 1
+        fig, ax = plt.subplots(ax_row, ax_col, figsize=(16, 9))
+        img_vis = images[:ax_row]
+        for i, img in enumerate(img_vis):
+            ax[i].imshow(img)
+        plt.savefig(save_dir + "vis_aug_imgs.jpg")
+
+
 
 
 

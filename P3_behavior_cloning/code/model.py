@@ -22,7 +22,7 @@ Driving_Log_Path = "../data/driving_log.csv"
 Img_Data_Dir = "../data/IMG/"
 Debug_Dir = "../data/debug/"
 Num_Epochs = 5
-Vis = False # visualize output for debugging
+Vis = True # visualize output for debugging
 
 class Pipeline():
     def __init__(self):
@@ -38,7 +38,7 @@ class Pipeline():
             self.dataUtil.train_val_generator(csv_path = Driving_Log_Path, image_dir=Img_Data_Dir, debug_dir = Debug_Dir)
 
         if Vis:
-            self.visUtil.angle_hist(train_generator, "train_angle", save_dir=Debug_Dir)
+            self.visUtil.vis_generator(train_generator, "after_flip_train_angle", save_dir=Debug_Dir)
 
         print("build model")
         model = self.modelUtil.create_network(Top_Crop, Bottom_Crop, Input_Shape)
