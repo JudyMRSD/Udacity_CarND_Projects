@@ -20,8 +20,11 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+
+
 NumSamples = -1  # 32 # -1  use all samples
-Vis = True # visualize output for debugging
+Vis = False # visualize output for debugging
 
 class ModelUtil():
     # input : RGB image, output: steering angle
@@ -32,39 +35,23 @@ class ModelUtil():
     @staticmethod
     def create_network(top_crop, bottom_crop, input_shape):
         # set up cropping2D layer
-        model = Sequential()
-        model.add(Cropping2D(cropping=((top_crop, bottom_crop),(0,0)), input_shape=input_shape))
-        # From Udacity online course: add lambda layer to normalize image and bring to zero mean
-        model.add(Lambda(lambda x:(x/255.0)-0.5))
-        model.add(Flatten())
-        model.add(Dense(1)) # output steering angle
-        # Lenet
         # model = Sequential()
-        # # convolution, relu:  conv1 (?, 32, 32, 6)
-        # # max pool:  conv1 (?, 16, 16, 6)
-        # model.add(Conv2D(6, 5, activation='relu', padding='same',
-        #                  input_shape=input_shape))
-        # model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-        # # convolution, relu:  conv2(?, 16, 16, 16)
-        # # max pool: conv2(?, 8, 8, 16)
-        # model.add(Conv2D(16, 5, activation='relu', padding='same'))
-        # model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-        # # conv3 (?, 8, 8, 16)
-        # # conv3 (?, 4, 4, 16)
-        # model.add(Conv2D(16, 5, activation='relu', padding='same'))
-        # model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-        # # Flatten
-        # # Flatten the output shape of the final pooling layer such that it's 1D instead of 3D.
-        # # fc0 (?, 256)
+        # model.add(Cropping2D(cropping=((top_crop, bottom_crop),(0,0)), input_shape=input_shape))
+        # # From Udacity online course: add lambda layer to normalize image and bring to zero mean
+        # model.add(Lambda(lambda x:(x/255.0)-0.5))
         # model.add(Flatten())
-        # model.add(Dense(256))
-        # model.add(Activation("relu"))
-        # # final softmax layer output prediction of probabilities for each class
-        # model.add(Dense(1))
+        # model.add(Dense(1)) # output steering angle
+
+        # started with the architecture here:
+        # https://github.com/mvpcom/Udacity-CarND-Project-3/blob/master/model.ipynb
+        model = Sequential()
+        model.add(Cropping2D(cropping=((top_crop, bottom_crop), (0, 0)), input_shape=input_shape))
+        model.add(Lambda(lambda x: (x / 255.0) - 0.5))
 
         model.summary()
         model.compile(loss='mse', optimizer='adam')
         return model
+        # todo: plot model architecture
 
 class DataUtil():
     def __init__(self):
@@ -92,19 +79,20 @@ class DataUtil():
                 flipped_img, flipped_ang = self.aug_flip(rgb_image, adj_ang)
                 light_img, light_ang = self.aug_light(flipped_img, flipped_ang)
                 shifted_imgs, shifted_angs = self.aug_shift(flipped_img, flipped_ang)
+                # shifted_imgs, shifted_angs = self.aug_shift_1(rgb_image, adj_ang)
 
                 # save img and angle
                 # images.extend([rgb_image, flipped_img])
                 # angles.extend([adj_ang, flipped_ang])
 
-                # if (abs(adj_ang) > self.angle_correction): # only keep half of the angles > 0.2
-                #     images.extend([rgb_image, flipped_img])
-                #     angles.extend([adj_ang, flipped_ang])
+                if (abs(adj_ang) > self.angle_correction): # only keep half of the angles > 0.2
+                    images.extend([rgb_image, flipped_img, light_img])
+                    angles.extend([adj_ang, flipped_ang, light_ang])
 
-                images.extend([rgb_image, flipped_img])
-                angles.extend([adj_ang, flipped_ang])
-                images.append(light_img)
-                angles.append(light_ang)
+                # images.extend([rgb_image, flipped_img])
+                # angles.extend([adj_ang, flipped_ang])
+                # images.append(light_img)
+                # angles.append(light_ang)
                 images.extend(shifted_imgs)
                 angles.extend(shifted_angs)
 
@@ -124,6 +112,23 @@ class DataUtil():
             img = cv2.flip(img, 1)
             angle = -angle
         return img, angle
+
+
+    # def aug_shift_1(self, image, angle):
+    #     shifted_images = []
+    #     shifted_angles = []
+    #     rows, cols, _ = image.shape
+    #     transRange = 100
+    #     numPixels = 10
+    #     valPixels = 0.4
+    #     transX = transRange * np.random.uniform() - transRange / 2
+    #     shifted_angle = angle + transX / transRange * 2 * valPixels
+    #     transY = numPixels * np.random.uniform() - numPixels / 2
+    #     transMat = np.float32([[1, 0, transX], [0, 1, transY]])
+    #     image = cv2.warpAffine(image, transMat, (cols, rows))
+    #     shifted_images.append(image)
+    #     shifted_angles.append(shifted_angle)
+    #     return shifted_images, shifted_angles
 
     def aug_shift(self, image, angle):
         # took from https://medium.com/@ValipourMojtaba/my-approach-for-project-3-2545578a9319
@@ -145,8 +150,9 @@ class DataUtil():
             affine_matrix = np.array([[1, 0 , trans_x],
                                       [0, 1, trans_y]], dtype = np.float32)
             shifted_img = cv2.warpAffine(image, affine_matrix, (img_w, img_h))
-            shifted_images.append(shifted_img)
-            shifted_angles.append(shifted_ang)
+            if abs(shifted_ang) <= 1: #  steering angle range -1 : 1
+                shifted_images.append(shifted_img)
+                shifted_angles.append(shifted_ang)
 
         return shifted_images, shifted_angles
 
@@ -198,7 +204,7 @@ class DataUtil():
         train_samples, validation_samples = train_test_split(samples, test_size=0.2)
         num_train_samples = len(train_samples)
         num_validation_samples = len(validation_samples)
-        train_generator = self.generator(train_samples, is_train = True, batch_size=32)
+        train_generator = self.generator(train_samples, is_train = True, batch_size=100)
 
         validation_generator = self.generator(validation_samples,  is_train=False, batch_size=32)
 
@@ -222,31 +228,46 @@ class VisualizeUtil():
         plt.savefig(save_dir + name + ".png")
         plt.close()
 
+    def draw_line(self, row, col, name, img, angle):
+        #steering angle is between -1 and 1
+        # convert -1 to 1  to angles  (angle + 1)/2 ---- [0,1]
+        # turn left: +    turn right: -
+        angle_degrees = (angle+1)/2 * 360
+        self.ax[row][col].set_title(name+",  angle "+ "{0:.2f}".format(round(angle,2)))
+
+        h, w, _ = img.shape
+        # todo: angle to line
+
+        # x0 = int(w / 2)
+        # y0 = int(h)
+        # x1 =
+        # y1 = int(h) +
+
+        # startX = x;
+        # startY = y;
+        # endX = x + 40 * Math.sin(angle);
+        # endY = y + 40 * Math.cos(angle);
+
+        # inspired by https://github.com/jeremy-shannon/CarND-Behavioral-Cloning-Project/blob/30e520da0d5a8d17bb1d7596eb8375f153f19468/model.py
+        cv2.line(img, (int(w / 2), int(h)), (int(w / 2 + angle * w / 4), int(h / 2)), (0, 255, 0),
+                 thickness=4)
+
+        self.ax[row][col].imshow(img)
 
     def vis_img_aug(self, aug_imgs, aug_angles, save_dir):    # todo: plot a line indicating angle on the image
         print("aug_imgs", len(aug_imgs))
         images = aug_imgs[0:4]
-        # 4: original, flipped, shifted, adjust light
-        # set Num_Shift = 1 to use this part (so the first 4 images
-        # are from different modifications on image)
 
+        # 4: original, flipped, shifted, adjust light
         ax_row = 2
         ax_col = 2
-        fig, ax = plt.subplots(ax_row, ax_col, figsize=(16, 9))
+        fig, self.ax = plt.subplots(ax_row, ax_col, figsize=(16, 9))
 
-        original = images[0]
-        flipped = images[1]
-        adjust_light = images[2]
-        shifted = images[3]
+        self.draw_line(0, 0, "original", images[0], aug_angles[0])
+        self.draw_line(0, 1, "flipped", images[1], aug_angles[1])
+        self.draw_line(1, 0, "adjust_light", images[2], aug_angles[2])
+        self.draw_line(1, 1, "shifted", images[3], aug_angles[3])
 
-        ax[0][0].set_title("original")
-        ax[0][0].imshow(original)
-        ax[0][1].set_title("flipped")
-        ax[0][1].imshow(flipped)
-        ax[1][0].set_title("adjust_light")
-        ax[1][0].imshow(adjust_light)
-        ax[1][1].set_title("shifted")
-        ax[1][1].imshow(shifted)
         plt.savefig(save_dir + "vis_aug_imgs.jpg")
         plt.close()
         print("finished save image")
