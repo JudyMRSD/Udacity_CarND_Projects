@@ -19,7 +19,12 @@ from keras.layers import Lambda, Flatten, Dense
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-
+from keras.utils import np_utils
+from keras.layers import Conv2D, Flatten, Lambda
+from keras.layers.pooling import MaxPooling2D
+from keras.layers.core import Dropout, Dense, Activation
+from keras.optimizers import SGD, Adam
+from keras.models import Sequential
 
 
 
@@ -31,27 +36,42 @@ class ModelUtil():
     def __init__(self):
         self.a = 0
 
+    def build_conv_layers(self, num_filter_list, kernel_size_list, activation ='elu', pool_size=2, dropout_ratio=0.3):
+        for i in range(len(num_filter_list)):
+            self.model.add(Conv2D(filters=num_filter_list[i], kernel_size=kernel_size_list[i], activation=activation))
+            self.model.add(MaxPooling2D(pool_size=(pool_size,pool_size)))  # default 2x2 pooling
+            self.model.add(Dropout(dropout_ratio))
 
-    @staticmethod
-    def create_network(top_crop, bottom_crop, input_shape):
-        # set up cropping2D layer
-        # model = Sequential()
-        # model.add(Cropping2D(cropping=((top_crop, bottom_crop),(0,0)), input_shape=input_shape))
-        # # From Udacity online course: add lambda layer to normalize image and bring to zero mean
-        # model.add(Lambda(lambda x:(x/255.0)-0.5))
-        # model.add(Flatten())
-        # model.add(Dense(1)) # output steering angle
+    # make regular densely-connected NN-layer ,  output = activation(dot(input, kernel) + bias)
+    def build_dense_layers(self, units_list, activation = 'elu', dropout_ratio=0.5):
+        for i in range(len(units_list)):
+            self.model.add(Dense(units_list[i], activation = activation))
+            self.model.add(Dropout(dropout_ratio))
 
-        # started with the architecture here:
+
+    def create_network(self, top_crop, bottom_crop, input_shape):
+
+        # started with the architecture here, but I wrote the code myself
         # https://github.com/mvpcom/Udacity-CarND-Project-3/blob/master/model.ipynb
-        model = Sequential()
-        model.add(Cropping2D(cropping=((top_crop, bottom_crop), (0, 0)), input_shape=input_shape))
-        model.add(Lambda(lambda x: (x / 255.0) - 0.5))
+        self.model = Sequential()
+        # preprocess layers
+        self.model.add(Cropping2D(cropping=((top_crop, bottom_crop), (0, 0)), input_shape=input_shape))
+        self.model.add(Lambda(lambda x: (x / 255.0) - 0.5))
+        # conv layers
+        self.model.add(Conv2D(filters=3,kernel_size = 1,activation ='elu', name='conv_1'))
+        self.build_conv_layers(num_filter_list=[16, 32, 32], kernel_size_list=[8, 5, 3])
 
-        model.summary()
-        model.compile(loss='mse', optimizer='adam')
-        return model
-        # todo: plot model architecture
+        self.model.add(Flatten())
+
+        self.build_dense_layers(units_list=[256, 128, 64, 8])
+        self.model.add(Dense(1, activation = 'elu', name='output_angle'))
+
+        self.model.summary()
+        self.model.compile(loss='mse', optimizer='adam')
+        self.model.summary()
+        return self.model
+
+
 
 class DataUtil():
     def __init__(self):
@@ -232,7 +252,7 @@ class VisualizeUtil():
         #steering angle is between -1 and 1
         # convert -1 to 1  to angles  (angle + 1)/2 ---- [0,1]
         # turn left: +    turn right: -
-        angle_degrees = (angle+1)/2 * 360
+        #  angle_degrees = (angle+1)/2 * 360
         self.ax[row][col].set_title(name+",  angle "+ "{0:.2f}".format(round(angle,2)))
 
         h, w, _ = img.shape
