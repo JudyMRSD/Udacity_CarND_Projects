@@ -19,6 +19,8 @@ from keras.layers import Lambda, Flatten, Dense
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
+
 from keras.utils import np_utils
 from keras.layers import Conv2D, Flatten, Lambda
 from keras.layers.pooling import MaxPooling2D
@@ -38,7 +40,7 @@ class ModelUtil():
 
     def build_conv_layers(self, num_filter_list, kernel_size_list, activation ='elu', pool_size=2, dropout_ratio=0.3):
         for i in range(len(num_filter_list)):
-            self.model.add(Conv2D(filters=num_filter_list[i], kernel_size=kernel_size_list[i], activation=activation))
+            self.model.add(Conv2D(num_filter_list[i], kernel_size_list[i], kernel_size_list[i], activation=activation))
             self.model.add(MaxPooling2D(pool_size=(pool_size,pool_size)))  # default 2x2 pooling
             self.model.add(Dropout(dropout_ratio))
 
@@ -58,7 +60,7 @@ class ModelUtil():
         self.model.add(Cropping2D(cropping=((top_crop, bottom_crop), (0, 0)), input_shape=input_shape))
         self.model.add(Lambda(lambda x: (x / 255.0) - 0.5))
         # conv layers
-        self.model.add(Conv2D(filters=3,kernel_size = 1,activation ='elu', name='conv_1'))
+        self.model.add(Conv2D(3, 1, 1,activation ='elu', name='conv_1'))
         self.build_conv_layers(num_filter_list=[16, 32, 32], kernel_size_list=[8, 5, 3])
 
         self.model.add(Flatten())
@@ -134,22 +136,6 @@ class DataUtil():
         return img, angle
 
 
-    # def aug_shift_1(self, image, angle):
-    #     shifted_images = []
-    #     shifted_angles = []
-    #     rows, cols, _ = image.shape
-    #     transRange = 100
-    #     numPixels = 10
-    #     valPixels = 0.4
-    #     transX = transRange * np.random.uniform() - transRange / 2
-    #     shifted_angle = angle + transX / transRange * 2 * valPixels
-    #     transY = numPixels * np.random.uniform() - numPixels / 2
-    #     transMat = np.float32([[1, 0, transX], [0, 1, transY]])
-    #     image = cv2.warpAffine(image, transMat, (cols, rows))
-    #     shifted_images.append(image)
-    #     shifted_angles.append(shifted_angle)
-    #     return shifted_images, shifted_angles
-
     def aug_shift(self, image, angle):
         # took from https://medium.com/@ValipourMojtaba/my-approach-for-project-3-2545578a9319
         # including hyper parameters
@@ -224,9 +210,9 @@ class DataUtil():
         train_samples, validation_samples = train_test_split(samples, test_size=0.2)
         num_train_samples = len(train_samples)
         num_validation_samples = len(validation_samples)
-        train_generator = self.generator(train_samples, is_train = True, batch_size=100)
+        train_generator = self.generator(train_samples, is_train = True, batch_size=4)
 
-        validation_generator = self.generator(validation_samples,  is_train=False, batch_size=32)
+        validation_generator = self.generator(validation_samples,  is_train=False, batch_size=4)
 
         return  num_train_samples, num_validation_samples, train_generator, validation_generator
 

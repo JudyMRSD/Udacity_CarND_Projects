@@ -1,4 +1,4 @@
-
+# todo: plot loss curve
 # input RGB image, output steer angle
 
 # crop layer example from Udacity
@@ -21,7 +21,7 @@ ModelDir = "../data/model/"
 Driving_Log_Path = "../data/driving_log.csv"
 Img_Data_Dir = "../data/IMG/"
 Debug_Dir = "../data/debug/"
-Num_Epochs = 5
+Num_Epochs = 500
 Vis = True # visualize output for debugging
 
 class Pipeline():
