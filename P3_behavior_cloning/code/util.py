@@ -210,6 +210,8 @@ class DataUtil():
         train_samples, validation_samples = train_test_split(samples, test_size=0.2)
         num_train_samples = len(train_samples)
         num_validation_samples = len(validation_samples)
+
+        print("create generator")
         train_generator = self.generator(train_samples, is_train = True, batch_size=4)
 
         validation_generator = self.generator(validation_samples,  is_train=False, batch_size=4)

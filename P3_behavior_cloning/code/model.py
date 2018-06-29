@@ -55,7 +55,7 @@ class Pipeline():
                             nb_val_samples=num_validation_samples,
                             nb_epoch=Num_Epochs,
                             callbacks=callbacks,
-                            verbose=2)
+                            verbose=1)
         model.save(ModelDir + 'model.h5')
         # TODO: test on X_test, y_test, print accuracy
 
