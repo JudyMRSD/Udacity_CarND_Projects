@@ -45,12 +45,10 @@ def loadImg(imgLoc,trainFlag):
 
     if trainFlag:
         imageLocation = Img_Data_Dir+imgLoc
-        print("imageLocation", imageLocation)
         image = cv2.imread(imageLocation,cv2.IMREAD_COLOR) # BGR
     else:
         imageLocation = Img_Data_Dir+imgLoc
-        print("imageLocation", imageLocation)
-        image = cv2.imread(imageLocation,cv2.IMREAD_COLOR) 
+        image = cv2.imread(imageLocation,cv2.IMREAD_COLOR)
     if (image is None):
         print(imageLocation)
 
@@ -89,18 +87,19 @@ allIdx = list(range(0,8060)) + list(range(8140,8300)) + list(range(10100,10600))
 print(drivingLog['Steering Angle'].shape)
 newDrivingLog = drivingLog.ix[allIdx]
 #print(newDrivingLog['Steering Angle'])# preprocess data and augment data if necessary
-drivingLog = newDrivingLogdrivingLog = drivingLog.reset_index()# select data from selected data
+drivingLog = newDrivingLogdrivingLog = drivingLog.reset_index(drop=True)# select data from selected data
 allIdx = list(range(0,10000))
 newDrivingLog = drivingLog.ix[allIdx]
 drivingLog = newDrivingLog
-drivingLog = drivingLog.reset_index()
+drivingLog = drivingLog.reset_index(drop=True)
 # In[6]:
 
 # data selection
-angles = drivingLog['Steering Angle'].astype(float)
+drivingLog['Steering Angle'] = drivingLog['Steering Angle'].astype(float)
+abs_angles = abs(drivingLog['Steering Angle'])
 # main idea: https://github.com/budmitr # Dmitrii Budylskii
-nonZeroSamples =  drivingLog.loc[abs(angles) >0.01,:]
-zeroSamples =  drivingLog.loc[abs(angles) <0.01,:]  #
+nonZeroSamples =  drivingLog.loc[abs_angles >0.01,:]
+zeroSamples =  drivingLog.loc[abs_angles <0.01,:]  #
 #print(nonZeroSamples)
 print(drivingLog.shape, nonZeroSamples.shape, "zeroSamples.shape",zeroSamples.shape)
 
@@ -259,12 +258,13 @@ yVal = drivingLogTest['Steering Angle']
 
 print(XVal.shape)
 
-XTrain = XTrain.reset_index()
-XVal = XVal.reset_index()
-yTrain = yTrain.reset_index()
-yTrain = yTrain['Steering Angle']
-yVal = yVal.reset_index()
-yVal = yVal['Steering Angle']
+
+XTrain = XTrain.reset_index(drop=True)
+XVal = XVal.reset_index(drop=True)
+# yTrain = yTrain.reset_index(drop=True)
+# yTrain = yTrain['Steering Angle']
+# yVal = yVal.reset_index(drop=True)
+# yVal = yVal['Steering Angle']
 # In[20]:
 
 # augment data to a dilstribution same to normal distribution
