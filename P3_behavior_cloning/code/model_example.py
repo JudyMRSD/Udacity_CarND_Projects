@@ -33,7 +33,7 @@ import matplotlib
 # get_ipython().magic(u'matplotlib inline')
 matplotlib.style.use('ggplot')
 drivingLogTest = pd.read_csv(Driving_Log_Path,names=['Center','Left','Right','Steering Angle','Throttle','Break','Speed'],header=None)
-
+drivingLogTest = drivingLogTest[1:]
 
 
 
@@ -122,7 +122,6 @@ drivingLog = newDrivingLog
 def generateBatch(data, labels, batchSize=10, threshold=0.2):
     
     keepProbability = 0.0
-    startIdx = 0
     batchCount = len(labels)/batchSize 
     inputShape = loadImg(data['Center'][0], True) 
     batchXCenter = np.zeros((batchSize, inputShape.shape[0], inputShape.shape[1], inputShape.shape[2]))
@@ -181,7 +180,7 @@ def generateBatch(data, labels, batchSize=10, threshold=0.2):
         yield batchXCenter, batchY
     
 def generateBatchVal(data, labels, batchSize=10):
-    startIdx = 1
+    startIdx = 0
     batchCount = len(labels)/batchSize 
     while True: # to make sure we never reach the end
         endIdx = startIdx + batchSize
@@ -438,9 +437,11 @@ numEpoch = 10 # 4 + 2
 thr = 0.0001 # 0.3
 for time in range(numTimes):
     trainGenerator = generateBatch(XTrain, yTrain, batchSize=50, threshold=thr)
-    validGenerator = generateBatchVal(XVal, yVal, batchSize=20)
+    validGenerator = generateBatchVal(XVal, yVal, batchSize=50)
     samplesPerEpoch = 32000 
     nbValSamples = 1000
+    # samplesPerEpoch = 32
+    # nbValSamples = 10
     #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, verbose=1)
     #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, 
     #                verbose=1, validation_data=validGenerator, nb_val_samples = nbValSamples,

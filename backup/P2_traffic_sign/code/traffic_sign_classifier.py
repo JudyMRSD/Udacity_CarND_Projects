@@ -26,10 +26,10 @@ class Pipeline():
 
     def exploreDataset(self):
         # load data
-        self.dataTool = DataSetTools(self.data_dir)
-        self.dataTool.loadData()
+        self.dataTool = DataSetTools()
+        self.dataTool.loadData(self.data_dir)
         self.dataTool.summarizeData()
-        self.dataTool.visualizeData(tag='train')
+        self.dataTool.visualizeData(tag='train', imgPath=self.visualize_dir)
         self.dataTool.data_augment()
         # summarize dataset info
         self.num_classes = self.dataTool.n_classes
@@ -44,7 +44,7 @@ class Pipeline():
         self.lenetModel = self.lenet.build()
 
 
-    def train(self, numEpochs):
+    def train(self):
         self.trainMonitTool = TrainMonitorTools()
         one_hot_y_train = np_utils.to_categorical(self.dataTool.y_train, self.num_classes)  # One-hot encode the labels
         one_hot_y_valid = np_utils.to_categorical(self.dataTool.y_valid, self.num_classes)  # One-hot encode the labels
@@ -57,17 +57,19 @@ class Pipeline():
 
         # monitor the test (validation) loss at each epoch
         # and after the test loss has not improved after two epochs, training is interrupted
-        # only best model is saved (without save_best_only, model 2 epochs after the best will be saved)
+
+        # won’t get the best model, but the model two epochs after the best model
         callbacks = [EarlyStopping(monitor='val_loss', patience=2),
                      ModelCheckpoint(filepath=self.train_model_path, monitor='val_loss', save_best_only=True)]
 
         history = self.lenetModel.fit_generator(train_generator,
-                                      epochs=numEpochs,
+                                      epochs=3,
                                       callbacks= callbacks,
                                       validation_data = validation_XY)
-        self.trainMonitTool.visualizeTrain(self.visualize_dir, history)
+        self.trainMonitTool.visualizeTrain(history)
 
 
+    # keras test example: https://github.com/EN10/KerasMNIST/blob/master/TFKpredict.py
     def test(self, test_data_dir, test_labels):
         print("enter test:")
         files = sorted(glob.glob(test_data_dir+'*.jpg'))
@@ -78,6 +80,8 @@ class Pipeline():
             img = cv2.imread(f)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, (self.img_width, self.img_height)) # (32, 32, 3)
+            # cv2.imshow("imgs", img)
+            # cv2.waitKey(0)
             gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # (32, 32)
             gray_img = np.expand_dims(gray_img, 2)  # (32, 32, 1)
             color_test_imgs.append(img)
@@ -90,25 +94,31 @@ class Pipeline():
         test_model = load_model(self.test_model_path)
         # out = test_model.predict(test_images)
         out_class = test_model.predict_classes(test_images)
-        self.dataTool.visualizeUniqueImgs(test_labels, color_test_imgs, tag="test", imgPath = self.visualize_dir, isGray=False)
+        self.dataTool.visualizeUniqueImgs(test_labels, color_test_imgs, tag="test", imgPath = '../visualize/', isGray=False)
         print("test_labels", test_labels)
+        # print("out", out)
         print("out class", out_class) # out class [12 25  0 14 13]
+        # todo: count accuracy percent
+
+
 
 def main():
     # set input training image directory
     # run pipeline
     # output classification results
-    data_dir = "../data/"
-    visualize_dir =  data_dir+'visualize/'
-    test_data_dir = data_dir+'googleImg/'
-    ground_truth = data_dir+'dataset_groundtruth/'
-    model_path = data_dir+'model/trafficSign_model.h5'
+    data_dir = '../traffic-signs-data/'
+    visualize_dir =  '../visualize/'
+    test_data_dir = '../traffic-signs-data/googleImg/'
+    model_path = 'trafficSign_model.h5'
     test_labels = [34, 25, 3, 14, 13]
     traffic_sign_pipeline = Pipeline(data_dir, visualize_dir, train_model_path= model_path, test_model_path= model_path)
     traffic_sign_pipeline.exploreDataset()
     traffic_sign_pipeline.buildNetwork()
-    traffic_sign_pipeline.train(numEpochs=30)
+    traffic_sign_pipeline.train()
     traffic_sign_pipeline.test(test_data_dir, test_labels)
+
+
+
 
 if __name__ == '__main__':
     main()

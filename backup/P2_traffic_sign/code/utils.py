@@ -4,16 +4,15 @@ import collections
 
 import numpy as np
 import matplotlib.pyplot as plt
-
 from keras.preprocessing.image import ImageDataGenerator
-plt.switch_backend('agg')
+# plt.switch_backend('agg')
 from skimage import exposure
 from collections import defaultdict
 
 class TrainMonitorTools():
     def __init__(self):
         print("train process tool")
-    def visualizeTrain(self, visualize_dir, history):
+    def visualizeTrain(self, history):
         # plot code from tutorial: https://machinelearningmastery.com/display-deep-learning-model-training-history-in-keras/
         print(history.history.keys())  # dict_keys(['val_acc', 'acc', 'loss', 'val_loss'])
         plt.close('all')
@@ -35,22 +34,27 @@ class TrainMonitorTools():
         plt.xlabel('epoch')
         plt.legend(['train', 'test'], loc='upper left')
         # plt.show()
-        plt.savefig(visualize_dir+'loss.jpg')
+        plt.savefig('../visualize/loss.jpg')
+
+        # loss = history.history['loss']
+        # print("loss", loss)
+        # save model
+        # self.lenetModel.save(self.train_model_path)
+        # todo: include validation set , early stopping when validation accuracy and training accuracy close
+        # https://chrisalbon.com/deep_learning/keras/neural_network_early_stopping/
+
 
 class DataSetTools():
-    def __init__(self, data_dir):
+    def __init__(self):
         print("Step 1: Dataset Summary & Exploration")
+
         self.X_train_augment = None
-        self.data_dir = data_dir
-        self.ground_truth_dir = self.data_dir + 'dataset_groundtruth/'
-        self.visualize_dir=self.data_dir+'visualize/'
 
-
-    def loadData(self):
+    def loadData(self, data_dir):
         print("load trianing and validation data")
-        training_file = self.ground_truth_dir + "train.p"
-        validation_file = self.ground_truth_dir + "valid.p"
-        testing_file = self.ground_truth_dir + "test.p"
+        training_file = data_dir + "train.p"
+        validation_file = data_dir + "valid.p"
+        testing_file = data_dir + "test.p"
 
         with open(training_file, mode='rb') as f:
             train = pickle.load(f)
@@ -79,7 +83,7 @@ class DataSetTools():
         print("Image data shape =", self.image_shape)
         print("Number of classes =", self.n_classes)
 
-    def visualizeHistogram(self, labels, fileName):
+    def visualizeHistogram(self, labels, fileName, imgPath):
         # histogram of classes
         plt.close('all')
         print("historgram bins arranged by classes ")
@@ -87,10 +91,10 @@ class DataSetTools():
         plt.title(fileName + "Data Histogram")
         plt.xlabel("Class")
         plt.ylabel("Occurence")
-        plt.savefig(self.visualize_dir + fileName + '_histogram.jpg')
+        plt.savefig(imgPath + fileName + '_histogram.jpg')
         # plt.show()
 
-    def visualizeUniqueImgs(self, labels, imgs, tag, isGray):
+    def visualizeUniqueImgs(self, labels, imgs, tag, imgPath, isGray):
         # plot unique images
 
         numRows = 1
@@ -129,14 +133,15 @@ class DataSetTools():
             if isGray == True:
                 ax.imshow(unique_images[i], cmap='gray')
             else:
+                print("unique_images[i]", i, unique_images[i].shape)
                 ax.imshow(unique_images[i])
 
-        plt.savefig(self.visualize_dir + tag + '_sample')
+        plt.savefig(imgPath + tag + '_sample')
         # plt.show()
         # plt.close('all')
 
 
-    def visualizeData(self, tag):
+    def visualizeData(self, tag, imgPath):
         # two options, training visualize and augmented data visualize
         if tag == 'train':
             isGray = False
@@ -145,8 +150,8 @@ class DataSetTools():
             isGray = True
             imgs, labels = self.X_train_augment, self.y_train
 
-        self.visualizeHistogram(labels, tag)
-        self.visualizeUniqueImgs(labels, imgs, tag, isGray)
+        self.visualizeHistogram(labels, tag, imgPath)
+        self.visualizeUniqueImgs(labels, imgs, tag, imgPath, isGray)
 
     def data_augment(self):
         # balance using keras ImageDataGenerator
@@ -157,7 +162,8 @@ class DataSetTools():
                         height_shift_range=0.1,
                         zoom_range=0.2,
                         horizontal_flip=True)
-        self.visualizeUniqueImgs(self.y_train, self.X_train_gray, tag='augment', isGray=True)
+        self.visualizeUniqueImgs(self.y_train, self.X_train_gray, tag='augment', imgPath='../visualize/', isGray=True)
+
 
     def gray(self, X):
         # shape is tuple, not mutable
