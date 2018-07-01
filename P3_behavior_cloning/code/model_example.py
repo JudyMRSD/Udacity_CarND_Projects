@@ -439,8 +439,8 @@ thr = 0.0001 # 0.3
 for time in range(numTimes):
     trainGenerator = generateBatch(XTrain, yTrain, batchSize=50, threshold=thr)
     validGenerator = generateBatchVal(XVal, yVal, batchSize=20)
-    samplesPerEpoch = 32 # len(yTrain)
-    nbValSamples = 10
+    samplesPerEpoch = 32000 
+    nbValSamples = 1000
     #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, verbose=1)
     #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, 
     #                verbose=1, validation_data=validGenerator, nb_val_samples = nbValSamples,
