@@ -52,7 +52,7 @@ def loadImg(imgLoc,trainFlag):
         imageLocation = Img_Data_Dir+imgLoc
         image = cv2.imread(imageLocation,cv2.IMREAD_COLOR)
     if (image is None):
-        print("ERROR  : image not exist",imageLocation)
+        print("image is None",imageLocation)
 
     image = image[60:-20,:,:] # vivek approach
     image = cv2.resize(image, (0,0), fx=0.5, fy=0.5)
@@ -72,9 +72,6 @@ rightImgs = np.array([loadImg(imgLoc, True) for imgLoc in drivingLog['Right'][0:
 
 # In[5]:
 
-print(centerImgs.shape)
-print(leftImgs.shape)
-print(rightImgs.shape)
 
 # show all dataset to choose 
 # source: http://stackoverflow.com/questions/21360361/how-to-dynamically-update-a-plot-in-a-loop-in-ipython-notebook-within-one-cell
@@ -86,7 +83,6 @@ import pylab as pl
     
 # results:     # filtering out dataset
 allIdx = list(range(0,8060)) + list(range(8140,8300)) + list(range(10100,10600)) + list(range(10720,13460)) + list(range(14940,15360)) + list(range(15600,15860)) + list(range(16240,16480)) + list(range(16980,17180)) + list(range(17640,18160)) + list(range(18460,19740)) + list(range(20120,20480)) + list(range(20600,21100)) + list(range(21240,21742))
-print(drivingLog['Steering Angle'].shape)
 newDrivingLog = drivingLog.ix[allIdx]
 #print(newDrivingLog['Steering Angle'])# preprocess data and augment data if necessary
 drivingLog = newDrivingLogdrivingLog = drivingLog.reset_index(drop=True)# select data from selected data
@@ -103,7 +99,6 @@ abs_angles = abs(drivingLog['Steering Angle'])
 nonZeroSamples =  drivingLog.loc[abs_angles >0.01,:]
 zeroSamples =  drivingLog.loc[abs_angles <0.01,:]  #
 #print(nonZeroSamples)
-print(drivingLog.shape, nonZeroSamples.shape, "zeroSamples.shape",zeroSamples.shape)
 
 
 # In[7]:
@@ -114,7 +109,6 @@ newDrivingLog = pd.concat([nonZeroSamples, zeroSamples.sample(frac=fractionVar)]
 
 # In[8]:
 
-#print(newDrivingLog)
 drivingLog = newDrivingLog
 
 
@@ -126,7 +120,7 @@ drivingLog = newDrivingLog
 
 # Generator
 def generateBatch(data, labels, batchSize=10, threshold=0.2):
-
+    
     keepProbability = 0.0
     startIdx = 0
     batchCount = len(labels)/batchSize 
@@ -183,6 +177,7 @@ def generateBatch(data, labels, batchSize=10, threshold=0.2):
             batchXCenter[counter] = image
             batchY[counter] = steeringAngle
             counter += 1
+        
         yield batchXCenter, batchY
     
 def generateBatchVal(data, labels, batchSize=10):
@@ -196,7 +191,7 @@ def generateBatchVal(data, labels, batchSize=10):
             if (os.path.isfile(imgLoc)):
                 batchXCenter.append(loadImg(imgLoc, False))
             else:
-                print("ERROR: image not exist:  there will be mismatch in batchXCenter and batchY shapes", imgLoc)
+                print("image not exist:", imgLoc)
         batchXCenter = np.array(batchXCenter, dtype=np.float32)
         #batchXCenter = np.array([loadImg(imgLoc, False) for imgLoc in data['Center'][startIdx:endIdx]], dtype=np.float32)
         
@@ -215,6 +210,7 @@ def generateBatchVal(data, labels, batchSize=10):
 
 # In[9]:
 
+#drivingLog = drivingLog.drop('level_0', 1)
 
 from sklearn.model_selection import train_test_split
 XTrain, XVal, yTrain, yVal = train_test_split(drivingLog,drivingLog['Steering Angle'],test_size=0.20,random_state=0)
@@ -225,6 +221,8 @@ yTrain = drivingLog['Steering Angle']
 XVal = drivingLogTest
 yVal = drivingLogTest['Steering Angle']
 
+
+# In[17]:
 
 
 
@@ -283,7 +281,6 @@ if image.shape[2]<3:
     plt.imshow(image.reshape(image.shape[0],image.shape[1]), cmap=plt.get_cmap('gray'))
 else:
     plt.imshow(image)
-
 
 hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV) #convert it to hsv
 #h, s, v = cv2.split(hsv)
@@ -353,6 +350,7 @@ else:
 newImage = cv2.flip(image,1)
 plt.figure()
 plt.imshow(newImage)
+
 
 
 # In[26]:
@@ -441,14 +439,14 @@ thr = 0.0001 # 0.3
 for time in range(numTimes):
     trainGenerator = generateBatch(XTrain, yTrain, batchSize=50, threshold=thr)
     validGenerator = generateBatchVal(XVal, yVal, batchSize=20)
-    samplesPerEpoch = 32000 
-    nbValSamples = 1000
+    samplesPerEpoch = 32 # len(yTrain)
+    nbValSamples = 10
     #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, verbose=1)
     #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, 
     #                verbose=1, validation_data=validGenerator, nb_val_samples = nbValSamples,
      #               callbacks=[ModelCheckpoint(filepath="bestVal.h5", verbose=1, save_best_only=True), ReduceLROnPlateau(monitor="val_loss", factor=0.2, patience=2, min_lr=0.000001)])
     history = model.fit_generator(trainGenerator, samples_per_epoch=samplesPerEpoch, nb_epoch=numEpoch, validation_data=validGenerator,
-                    nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath=ModelDir+"bestVal.h5", verbose=1, save_best_only=True)]
+                    nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath="bestVal.h5", verbose=1, save_best_only=True)]
                 )
     print(thr, 'Time ',time+1)
     thr += (1/(numTimes))
@@ -481,6 +479,4 @@ for time in range(numTimes):
 # thr += (1/(numTimes))
 
 # for time in range(numTimes):
-    
-
     
