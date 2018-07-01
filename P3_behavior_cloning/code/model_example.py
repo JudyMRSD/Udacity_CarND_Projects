@@ -446,7 +446,7 @@ for time in range(numTimes):
     #                verbose=1, validation_data=validGenerator, nb_val_samples = nbValSamples,
      #               callbacks=[ModelCheckpoint(filepath="bestVal.h5", verbose=1, save_best_only=True), ReduceLROnPlateau(monitor="val_loss", factor=0.2, patience=2, min_lr=0.000001)])
     history = model.fit_generator(trainGenerator, samples_per_epoch=samplesPerEpoch, nb_epoch=numEpoch, validation_data=validGenerator,
-                    nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath="bestVal.h5", verbose=1, save_best_only=True)]
+                    nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath=ModelDir+"bestVal.h5", verbose=1, save_best_only=True)]
                 )
     print(thr, 'Time ',time+1)
     thr += (1/(numTimes))
