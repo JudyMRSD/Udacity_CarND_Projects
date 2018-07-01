@@ -52,7 +52,7 @@ def loadImg(imgLoc,trainFlag):
         imageLocation = Img_Data_Dir+imgLoc
         image = cv2.imread(imageLocation,cv2.IMREAD_COLOR)
     if (image is None):
-        print(imageLocation)
+        print("ERROR  : image not exist",imageLocation)
 
     image = image[60:-20,:,:] # vivek approach
     image = cv2.resize(image, (0,0), fx=0.5, fy=0.5)
@@ -120,16 +120,13 @@ drivingLog = newDrivingLog
 
 # In[9]:
 
-print(drivingLog['Steering Angle'].shape)
 
 
 # In[10]:
 
 # Generator
 def generateBatch(data, labels, batchSize=10, threshold=0.2):
-    print("-------------generateBatch")
-    print("data.shape", data.shape)
-    print("labels.shape", labels.shape)
+
     keepProbability = 0.0
     startIdx = 0
     batchCount = len(labels)/batchSize 
@@ -181,39 +178,32 @@ def generateBatch(data, labels, batchSize=10, threshold=0.2):
             # sanity check of data
             image = image.reshape(inputShape.shape[0], inputShape.shape[1], inputShape.shape[2])
             if(image.shape[0]==0):
-                print(idx)
                 continue
             
             batchXCenter[counter] = image
             batchY[counter] = steeringAngle
             counter += 1
-        print("counter", counter)
-        print("batchXCenter.shape",batchXCenter.shape, "batchY.shape",batchY.shape)
         yield batchXCenter, batchY
     
 def generateBatchVal(data, labels, batchSize=10):
     startIdx = 1
     batchCount = len(labels)/batchSize 
     while True: # to make sure we never reach the end
-        print("startIdx", startIdx)
         endIdx = startIdx + batchSize
         batchXCenter = []
-        print("data shape", data['Center'].shape)
         for imgLoc in data['Center'][startIdx:endIdx]:
             imgLoc = Img_Data_Dir+ imgLoc.split('/')[-1]
             if (os.path.isfile(imgLoc)):
                 batchXCenter.append(loadImg(imgLoc, False))
             else:
-                print("image not exist:", imgLoc)
+                print("ERROR: image not exist:  there will be mismatch in batchXCenter and batchY shapes", imgLoc)
         batchXCenter = np.array(batchXCenter, dtype=np.float32)
         #batchXCenter = np.array([loadImg(imgLoc, False) for imgLoc in data['Center'][startIdx:endIdx]], dtype=np.float32)
         
         #batchXLeft = np.array([loadImg(imgLoc) for imgLoc in data['Left'][startIdx:endIdx]], dtype=np.float32)
         #batchXRight = np.array([loadImg(imgLoc) for imgLoc in data['Right'][startIdx:endIdx]], dtype=np.float32) 
         #yield batchXCenter, batchXLeft, batchXRight, labels[startIdx:endIdx], startIdx
-        print("startIdx:endIdx", startIdx, endIdx)
         batchY = labels[startIdx:endIdx]
-        print("validation batchXCenter", batchXCenter.shape, "batchY", batchY.shape) 
         yield batchXCenter, batchY
         startIdx = endIdx
         if startIdx > len(data)-1:
@@ -225,8 +215,6 @@ def generateBatchVal(data, labels, batchSize=10):
 
 # In[9]:
 
-#drivingLog = drivingLog.drop('level_0', 1)
-print(drivingLog.columns.values)
 
 from sklearn.model_selection import train_test_split
 XTrain, XVal, yTrain, yVal = train_test_split(drivingLog,drivingLog['Steering Angle'],test_size=0.20,random_state=0)
@@ -238,9 +226,6 @@ XVal = drivingLogTest
 yVal = drivingLogTest['Steering Angle']
 
 
-# In[17]:
-
-print(XVal.shape)
 
 
 XTrain = XTrain.reset_index(drop=True)
@@ -262,7 +247,6 @@ if image.shape[2]<3:
     plt.imshow(image.reshape(image.shape[0],image.shape[1]), cmap=plt.get_cmap('gray'))
 else:
     plt.imshow(image)
-print(steeringAngle)
 
 rows, cols, _ = image.shape
 transRange = 150
@@ -283,7 +267,6 @@ if dim3<3:
     plt.imshow(newImage.reshape(newImage.shape[0],newImage.shape[1]), cmap=plt.get_cmap('gray'))
 else:
     plt.imshow(newImage)
-print(newsteeringAngle)          
             
 
 
@@ -300,12 +283,11 @@ if image.shape[2]<3:
     plt.imshow(image.reshape(image.shape[0],image.shape[1]), cmap=plt.get_cmap('gray'))
 else:
     plt.imshow(image)
-print(testLabel)
+
 
 hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV) #convert it to hsv
 #h, s, v = cv2.split(hsv)
 randomLight = 0.25 + np.random.rand() 
-print(randomLight)
 hsv[:,:,2] =  hsv[:,:,2] * randomLight
 newImage = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB) 
 rows,cols,dim3 = newImage.shape
@@ -314,7 +296,6 @@ if dim3<3:
     plt.imshow(newImage.reshape(newImage.shape[0],newImage.shape[1]), cmap=plt.get_cmap('gray'))
 else:
     plt.imshow(newImage)
-print(testLabel)
 
 
 # In[27]:
@@ -330,7 +311,6 @@ if image.shape[2]<3:
     plt.imshow(image.reshape(image.shape[0],image.shape[1]), cmap=plt.get_cmap('gray'))
 else:
     plt.imshow(image)
-print(testLabel)
 
 newImage = XTrain['Left'][idx]
 newImage = loadImg(newImage, True) 
@@ -342,7 +322,6 @@ if dim3<3:
     plt.imshow(newImage.reshape(newImage.shape[0],newImage.shape[1]), cmap=plt.get_cmap('gray'))
 else:
     plt.imshow(newImage)
-print(testLabel)
 
 #test right
 newImage = XTrain['Right'][idx]
@@ -355,7 +334,6 @@ if dim3<3:
     plt.imshow(newImage.reshape(newImage.shape[0],newImage.shape[1]), cmap=plt.get_cmap('gray'))
 else:
     plt.imshow(newImage)
-print(testLabel)
 
 
 
@@ -371,13 +349,10 @@ if image.shape[2]<3:
     plt.imshow(image.reshape(image.shape[0],image.shape[1]), cmap=plt.get_cmap('gray'))
 else:
     plt.imshow(image)
-print(testLabel)
 
 newImage = cv2.flip(image,1)
 plt.figure()
 plt.imshow(newImage)
-print(image.shape)
-print(-testLabel)
 
 
 # In[26]:
@@ -466,14 +441,14 @@ thr = 0.0001 # 0.3
 for time in range(numTimes):
     trainGenerator = generateBatch(XTrain, yTrain, batchSize=50, threshold=thr)
     validGenerator = generateBatchVal(XVal, yVal, batchSize=20)
-    samplesPerEpoch = 32 # len(yTrain)
-    nbValSamples = 10
+    samplesPerEpoch = 32000 
+    nbValSamples = 1000
     #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, verbose=1)
     #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, 
     #                verbose=1, validation_data=validGenerator, nb_val_samples = nbValSamples,
      #               callbacks=[ModelCheckpoint(filepath="bestVal.h5", verbose=1, save_best_only=True), ReduceLROnPlateau(monitor="val_loss", factor=0.2, patience=2, min_lr=0.000001)])
     history = model.fit_generator(trainGenerator, samples_per_epoch=samplesPerEpoch, nb_epoch=numEpoch, validation_data=validGenerator,
-                    nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath="bestVal.h5", verbose=1, save_best_only=True)]
+                    nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath=ModelDir+"bestVal.h5", verbose=1, save_best_only=True)]
                 )
     print(thr, 'Time ',time+1)
     thr += (1/(numTimes))
