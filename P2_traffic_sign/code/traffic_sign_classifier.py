@@ -60,7 +60,8 @@ class Pipeline():
         # only best model is saved (without save_best_only, model 2 epochs after the best will be saved)
         callbacks = [EarlyStopping(monitor='val_loss', patience=2),
                      ModelCheckpoint(filepath=self.train_model_path, monitor='val_loss', save_best_only=True)]
-
+        # steps_per_epoch
+        
         history = self.lenetModel.fit_generator(train_generator,
                                       epochs=numEpochs,
                                       callbacks= callbacks,
@@ -90,7 +91,7 @@ class Pipeline():
         test_model = load_model(self.test_model_path)
         # out = test_model.predict(test_images)
         out_class = test_model.predict_classes(test_images)
-        self.dataTool.visualizeUniqueImgs(test_labels, color_test_imgs, tag="test", imgPath = self.visualize_dir, isGray=False)
+        self.dataTool.visualizeUniqueImgs(test_labels, color_test_imgs, tag="test", isGray=False)
         print("test_labels", test_labels)
         print("out class", out_class) # out class [12 25  0 14 13]
 
@@ -107,7 +108,7 @@ def main():
     traffic_sign_pipeline = Pipeline(data_dir, visualize_dir, train_model_path= model_path, test_model_path= model_path)
     traffic_sign_pipeline.exploreDataset()
     traffic_sign_pipeline.buildNetwork()
-    traffic_sign_pipeline.train(numEpochs=30)
+    traffic_sign_pipeline.train(numEpochs=100)
     traffic_sign_pipeline.test(test_data_dir, test_labels)
 
 if __name__ == '__main__':

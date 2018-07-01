@@ -24,7 +24,7 @@ class TrainMonitorTools():
         plt.ylabel('accuracy')
         plt.xlabel('epoch')
         plt.legend(['train', 'test'], loc='upper left')
-        plt.savefig('../visualize/acc.jpg')
+        plt.savefig(visualize_dir+'acc.jpg')
         # plt.show()
         # summarize history for loss
         plt.close('all')

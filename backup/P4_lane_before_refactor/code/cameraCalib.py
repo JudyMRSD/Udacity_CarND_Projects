@@ -96,12 +96,12 @@ class CameraCalibration:
 def main():
     chessboard_in_paths = '../camera_cal/*.jpg'
     chessboard_out_paths = '../output_images/camera_cal_out/'
-    save_params_path = '../camera_calib_param/dist_pickle.p'
+    save_params_path = '../output_numeric/dist_pickle.p'
     chessboard_input_test = '../camera_cal/calibration1.jpg'
     chessboard_output_test = '../output_images/camera_cal_out/calibration1_undist.jpg'
     car_input_test = '../test_images/test2.jpg'
     car_output_test = '../output_images/test_image_out/test2_undist.jpg'
-    input_dist_pkl = '../camera_calib_param/dist_pickle.p'
+    input_dist_pkl = '../output_numeric/dist_pickle.p'
 
     corner_rows = 6
     corner_cols = 9

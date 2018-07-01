@@ -10,12 +10,12 @@ import matplotlib.image as mpimg
 def main():
     chessboard_in_paths = '../camera_cal/*.jpg'
     chessboard_out_paths = '../output_images/camera_cal_out/'
-    save_params_path = '../camera_calib_param/dist_pickle.p'
+    save_params_path = '../output_numeric/dist_pickle.p'
     chessboard_input_test = '../camera_cal/calibration1.jpg'
     chessboard_output_test = '../output_images/camera_cal_out/calibration1_undist.jpg'
     car_input_test = '../test_images/straight_lines2.jpg'
     car_output_test = '../output_images/test_image_out/straight_lines2_out.jpg'
-    input_dist_pkl = '../camera_calib_param/dist_pickle.p'
+    input_dist_pkl = '../output_numeric/dist_pickle.p'
 
     outdir = '../output_images/thresh_out/'
     input_img_path = '../test_images/test5.jpg'
