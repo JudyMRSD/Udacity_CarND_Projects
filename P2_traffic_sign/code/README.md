@@ -1,5 +1,11 @@
 # **Traffic Sign Classifier Pipeline** 
 -----
+# aws:
+change to an empty directory:
+scp source dest
+
+scp carnd@52.23.187.65:/home/carnd/UdacityP2/code/trafficSign.h5 ./
+
 # reference:
 adapted LeNet keras code from: https://github.com/f00-/mnist-lenet-keras/blob/master/lenet.py
 
