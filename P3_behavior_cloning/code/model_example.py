@@ -11,9 +11,11 @@ ModelDir = "../data/model/"
 Driving_Log_Path = "../data/driving_log.csv"
 Img_Data_Dir = "../data/IMG/"
 
-
+originalHyperparam = False
 
 import pandas as pd
+import os.path
+
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 
@@ -125,13 +127,17 @@ print(drivingLog['Steering Angle'].shape)
 
 # Generator
 def generateBatch(data, labels, batchSize=10, threshold=0.2):
+    print("-------------generateBatch")
+    print("data.shape", data.shape)
+    print("labels.shape", labels.shape)
     keepProbability = 0.0
     startIdx = 0
     batchCount = len(labels)/batchSize 
-    thermal = 0.0
     inputShape = loadImg(data['Center'][0], True) 
     batchXCenter = np.zeros((batchSize, inputShape.shape[0], inputShape.shape[1], inputShape.shape[2]))
-    batchY = np.zeros(batchSize)
+    
+    batchY = np.zeros(batchSize)  
+
     while True: # to make sure we never reach the end
         #if startIdx > len(data):
         #    startIdx = 0
@@ -143,6 +149,7 @@ def generateBatch(data, labels, batchSize=10, threshold=0.2):
         #for i in range(startIdx,endIdx):
         counter = 0
         while counter<=batchSize-1:
+            # print("counter", counter)
             idx = np.random.randint(len(labels)-1) 
             steeringAngle = labels[idx]
 
@@ -180,63 +187,40 @@ def generateBatch(data, labels, batchSize=10, threshold=0.2):
             batchXCenter[counter] = image
             batchY[counter] = steeringAngle
             counter += 1
+        print("counter", counter)
+        print("batchXCenter.shape",batchXCenter.shape, "batchY.shape",batchY.shape)
         yield batchXCenter, batchY
-        thermal += 1/batchCount
     
 def generateBatchVal(data, labels, batchSize=10):
-    startIdx = 0
+    startIdx = 1
     batchCount = len(labels)/batchSize 
     while True: # to make sure we never reach the end
+        print("startIdx", startIdx)
         endIdx = startIdx + batchSize
-        batchXCenter = np.array([loadImg(imgLoc, False) for imgLoc in data['Center'][startIdx:endIdx]], dtype=np.float32)
+        batchXCenter = []
+        print("data shape", data['Center'].shape)
+        for imgLoc in data['Center'][startIdx:endIdx]:
+            imgLoc = Img_Data_Dir+ imgLoc.split('/')[-1]
+            if (os.path.isfile(imgLoc)):
+                batchXCenter.append(loadImg(imgLoc, False))
+            else:
+                print("image not exist:", imgLoc)
+        batchXCenter = np.array(batchXCenter, dtype=np.float32)
+        #batchXCenter = np.array([loadImg(imgLoc, False) for imgLoc in data['Center'][startIdx:endIdx]], dtype=np.float32)
+        
         #batchXLeft = np.array([loadImg(imgLoc) for imgLoc in data['Left'][startIdx:endIdx]], dtype=np.float32)
         #batchXRight = np.array([loadImg(imgLoc) for imgLoc in data['Right'][startIdx:endIdx]], dtype=np.float32) 
         #yield batchXCenter, batchXLeft, batchXRight, labels[startIdx:endIdx], startIdx
+        print("startIdx:endIdx", startIdx, endIdx)
         batchY = labels[startIdx:endIdx]
+        print("validation batchXCenter", batchXCenter.shape, "batchY", batchY.shape) 
         yield batchXCenter, batchY
         startIdx = endIdx
         if startIdx > len(data)-1:
-            startIdx = 0            
+            startIdx = 0
 
 
-# In[11]:
 
-# example - a test case
-miniBatch = generateBatch(drivingLog, drivingLog['Steering Angle'], batchSize=10, threshold = 0.001)
-
-
-# In[12]:
-
-steeringAngleList = np.empty((0))
-#print(steeringAngleList)
-for i in range(1,200):
-    steeringAngleList = np.append(steeringAngleList,next(miniBatch)[1])
-    #if i>5:
-    #    print(next(miniBatch)[1])
-    #else:
-    #    next(miniBatch)
-# print(next(miniBatch)[4])
-
-
-# In[13]:
-
-print(np.sum(np.array([   2.,    0.,    2.,    1.,    0.,    0.,    0.,    0.,    0.,
-           1.,    0.,    0.,    0.,    0.,    0.,    2.,    0.,    3.,
-           2.,    1.,    1.,    3.,    0.,    6.,   14.,   12.,   10.,
-          22.,   13.,   26.,   12.,   30.,   68.,   20.,   68.,   82.,
-          84.,   36.,   67.,   75.,   81.,  319.,  232.,  135.,  157.,
-         234.,  318.,  356.,  128.,  161.,  573.,  110.,  339.,  350.,
-         228.,  156.,  170.,  253.,  312.,   68.,   73.,   70.,   55.,
-          88.,   79.,   41.,   22.,   61.,   39.,   18.,   25.,   16.,
-          20.,    7.,    9.,    8.,    3.,    0.,    1.,    0.,    0.,
-           2.,    2.,    0.,    0.,    0.,    2.,    0.,    4.,    0.,
-           0.,    0.,    0.,    0.,    0.,    0.,    1.,    0.,    0.,    1.])))
-
-
-# In[14]:
-
-#hist = np.histog\ram(steeringAngleList)
-plt.hist(steeringAngleList.astype('float'), bins=100)
 
 
 # In[9]:
@@ -374,10 +358,6 @@ else:
 print(testLabel)
 
 
-# In[28]:
-
-miniBatch = generateBatch(XTrain, yTrain, batchSize=10)
-
 
 # In[25]:
 
@@ -482,21 +462,50 @@ from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, LambdaCallback, 
 numTimes = 10
 numEpoch = 10 # 4 + 2
 
-
 thr = 0.0001 # 0.3
 for time in range(numTimes):
     trainGenerator = generateBatch(XTrain, yTrain, batchSize=50, threshold=thr)
-    validGenerator = generateBatchVal(XVal, yVal, batchSize=50)
-    samplesPerEpoch = 32000 # len(yTrain)
-    nbValSamples = 1000
-
-    # history = model.fit_generator(trainGenerator, samples_per_epoch=samplesPerEpoch, nb_epoch=numEpoch, validation_data=validGenerator,
-    #                 nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath="bestVal"+str(time)+".h5", verbose=1, save_best_only=True)]
-    #             )
+    validGenerator = generateBatchVal(XVal, yVal, batchSize=20)
+    samplesPerEpoch = 32 # len(yTrain)
+    nbValSamples = 10
+    #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, verbose=1)
+    #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, 
+    #                verbose=1, validation_data=validGenerator, nb_val_samples = nbValSamples,
+     #               callbacks=[ModelCheckpoint(filepath="bestVal.h5", verbose=1, save_best_only=True), ReduceLROnPlateau(monitor="val_loss", factor=0.2, patience=2, min_lr=0.000001)])
     history = model.fit_generator(trainGenerator, samples_per_epoch=samplesPerEpoch, nb_epoch=numEpoch, validation_data=validGenerator,
-                    nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath=ModelDir+"bestVal.h5", verbose=1, save_best_only=True)]
+                    nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath="bestVal.h5", verbose=1, save_best_only=True)]
                 )
-    
     print(thr, 'Time ',time+1)
     thr += (1/(numTimes))
 
+
+# thr = 0.0001 # 0.3
+# print("XTrain.shape", XTrain.shape)
+# print("yTrain.shape", yTrain.shape)
+
+# trainGenerator = generateBatch(XTrain, yTrain, batchSize=50, threshold=thr)
+# validGenerator = generateBatchVal(XVal, yVal, batchSize=20)
+
+# samplesPerEpoch = 32 # batches per epoch 
+# nbValSamples = 4
+
+
+# if (originalHyperparam):
+#         samplesPerEpoch = 32000 # len(yTrain)
+#         nbValSamples = 1000
+
+# print("------------start")
+# # history = model.fit_generator(trainGenerator, samples_per_epoch=samplesPerEpoch, nb_epoch=numEpoch, validation_data=validGenerator,
+# #                 nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath="bestVal"+str(time)+".h5", verbose=1, save_best_only=True)]
+# #             )
+# history = model.fit_generator(trainGenerator, samples_per_epoch=samplesPerEpoch, nb_epoch=numEpoch, validation_data=validGenerator,
+#                 nb_val_samples=nbValSamples) #, callbacks=[ModelCheckpoint(filepath=ModelDir+"bestVal.h5", verbose=1, save_best_only=True)]
+            
+
+# print(thr, 'Time ',time+1)
+# thr += (1/(numTimes))
+
+# for time in range(numTimes):
+    
+
+    
