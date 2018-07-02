@@ -8,10 +8,19 @@
 # example implementation in : https://github.com/mvpcom/Udacity-CarND-Project-3
 
 # try different settings
-Expand_Log = False
-Less_Zero = False
+# original setting
+# Expand_Log = True
+# Less_Zero = True
 
+# turn both off
+Expand_Log = True
+Less_Zero = True
 
+Param_Name = ""
+if Expand_Log:
+    Param_Name+="El"
+if Less_Zero:
+    Param_Name+="Lz"
 
 
 # TODO: check the "different" tag
@@ -83,6 +92,9 @@ def generateBatch(data, labels, batchSize=10,):
         while counter <= batchSize - 1:
             # print("counter", counter)
             idx = np.random.randint(len(labels) - 1)
+            if (idx>len(labels)-1):
+                print("idx=",idx, " len(labels)-1=", len(labels)-1)
+
             steeringAngle = labels[idx]
 
             imgLoc = data['Center'][idx]
@@ -108,8 +120,6 @@ def generateBatch(data, labels, batchSize=10,):
                 hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)  # convert it to hsv
                 randomLight = 0.25 + np.random.rand()
                 hsv[:, :, 2] = hsv[:, :, 2] * randomLight
-                newImage = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
-
             # sanity check of data
             image = image.reshape(inputShape.shape[0], inputShape.shape[1], inputShape.shape[2])
             if (image.shape[0] == 0):
@@ -224,5 +234,5 @@ validGenerator = generateBatchVal(XVal, yVal, batchSize=50)
 samplesPerEpoch = 32000
 nbValSamples = 1000
 history = model.fit_generator(trainGenerator, samples_per_epoch=samplesPerEpoch, nb_epoch=numEpoch, validation_data=validGenerator,
-                nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath=ModelDir+"bestVal.h5", verbose=1, save_best_only=True)]
+                nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath=ModelDir+Param_Name+"bestVal.h5", verbose=1, save_best_only=True)]
             )

@@ -58,14 +58,23 @@ class Pipeline():
         # monitor the test (validation) loss at each epoch
         # and after the test loss has not improved after two epochs, training is interrupted
         # only best model is saved (without save_best_only, model 2 epochs after the best will be saved)
-        callbacks = [EarlyStopping(monitor='val_loss', patience=2),
+        
+
+
+        callbacks = [EarlyStopping(monitor='val_acc', patience=20),
                      ModelCheckpoint(filepath=self.train_model_path, monitor='val_loss', save_best_only=True)]
-        # steps_per_epoch
+        # # steps_per_epoch
         
         history = self.lenetModel.fit_generator(train_generator,
                                       epochs=numEpochs,
                                       callbacks= callbacks,
                                       validation_data = validation_XY)
+
+        # no callback
+        # history = self.lenetModel.fit_generator(train_generator,
+        #                               epochs=numEpochs,
+        #                               validation_data = validation_XY)
+        # model.save(self.train_model_path)
         self.trainMonitTool.visualizeTrain(self.visualize_dir, history)
 
 
@@ -83,8 +92,6 @@ class Pipeline():
             gray_img = np.expand_dims(gray_img, 2)  # (32, 32, 1)
             color_test_imgs.append(img)
             test_images.append(gray_img)
-
-
         test_images = np.array(test_images)
         print("test_images shape", test_images.shape)
         # convert images to a 4D tensor to feed into keras model
