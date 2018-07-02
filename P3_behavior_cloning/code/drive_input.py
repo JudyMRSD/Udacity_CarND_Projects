@@ -12,16 +12,22 @@ import eventlet.wsgi
 from PIL import Image
 from flask import Flask
 from io import BytesIO
-
+# reshape input to match drive_example.py trained model 
 from keras.models import load_model
 import h5py
 from keras import __version__ as keras_version
-
+import cv2
 sio = socketio.Server()
 app = Flask(__name__)
 model = None
 prev_image_array = None
 
+def processFunc(image):
+    
+    image = image[60:-20,:,:]
+    image = cv2.resize(image,(0,0),fx=0.5,fy=0.5)
+   
+    return image
 
 class SimplePIController:
     def __init__(self, Kp, Ki):
@@ -61,9 +67,11 @@ def telemetry(sid, data):
         # The current image from the center camera of the car
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
-        image_array = np.asarray(image)
-        image = processFunc(image_array)
 
+
+        image_array = np.asarray(image)
+        image_array = processFunc(image_array)
+        
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
 
         throttle = controller.update(float(speed))

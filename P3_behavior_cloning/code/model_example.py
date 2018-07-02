@@ -7,6 +7,7 @@
 
 # example implementation in : https://github.com/mvpcom/Udacity-CarND-Project-3
 
+
 ModelDir = "../data/model/"
 Driving_Log_Path = "../data/driving_log.csv"
 Img_Data_Dir = "../data/IMG/"
@@ -83,12 +84,14 @@ import pylab as pl
     
 # results:     # filtering out dataset
 allIdx = list(range(0,8060)) + list(range(8140,8300)) + list(range(10100,10600)) + list(range(10720,13460)) + list(range(14940,15360)) + list(range(15600,15860)) + list(range(16240,16480)) + list(range(16980,17180)) + list(range(17640,18160)) + list(range(18460,19740)) + list(range(20120,20480)) + list(range(20600,21100)) + list(range(21240,21742))
+print("drivingLog shape",drivingLog.shape)
 newDrivingLog = drivingLog.ix[allIdx]
 #print(newDrivingLog['Steering Angle'])# preprocess data and augment data if necessary
 drivingLog = newDrivingLogdrivingLog = drivingLog.reset_index(drop=True)# select data from selected data
 allIdx = list(range(0,10000))
 newDrivingLog = drivingLog.ix[allIdx]
 drivingLog = newDrivingLog
+print("drivingLog after",drivingLog.shape)
 drivingLog = drivingLog.reset_index(drop=True)
 # In[6]:
 
