@@ -9,7 +9,7 @@ from keras.preprocessing.image import ImageDataGenerator
 plt.switch_backend('agg')
 from skimage import exposure
 from collections import defaultdict
-
+Augment = False
 class TrainMonitorTools():
     def __init__(self):
         print("train process tool")
@@ -66,6 +66,8 @@ class DataSetTools():
         self.X_train_gray = self.gray(self.X_train)
         self.X_valid_gray = self.gray(self.X_valid)
 
+        self.X_train_norm = (self.X_train - 128. )/ 128.
+        self.X_val_norm = (self.X_valid - 128. )/ 128.
 
     def summarizeData(self):
         self.n_train = self.X_train.shape[0]
@@ -150,14 +152,20 @@ class DataSetTools():
 
     def data_augment(self):
         # balance using keras ImageDataGenerator
-        self.train_datagen =ImageDataGenerator(
-                        data_format='channels_last',
-                        rotation_range=15,
-                        width_shift_range=0.1,
-                        height_shift_range=0.1,
-                        zoom_range=0.2,
-                        horizontal_flip=True)
-        self.visualizeUniqueImgs(self.y_train, self.X_train_gray, tag='augment', isGray=True)
+        if Augment:
+            self.train_datagen =ImageDataGenerator(
+                            data_format='channels_last',
+                            samplewise_center = True,   # todo : try data = (data - 128) / 128
+                            rotation_range=15,
+                            width_shift_range=0.1,
+                            height_shift_range=0.1,
+                            zoom_range=0.2,
+                            horizontal_flip=True)
+            self.visualizeUniqueImgs(self.y_train, self.X_train_gray, tag='augment', isGray=True)
+        else:
+            self.train_datagen = ImageDataGenerator(
+                data_format='channels_last')
+
 
     def gray(self, X):
         # shape is tuple, not mutable

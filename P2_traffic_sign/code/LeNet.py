@@ -5,9 +5,11 @@ from keras.layers.convolutional import MaxPooling2D
 from keras.layers.core import Activation
 from keras.layers.core import Flatten
 from keras.layers.core import Dense
+from keras.layers import LeakyReLU
+from keras.layers import Dense, Dropout, Activation
 import keras
 
-Optimizer = "Adadelta" # Adadelta
+Optimizer = "Adam" # Adadelta
 
 
 class LeNet():
@@ -26,19 +28,27 @@ class LeNet():
         # max pool: conv2(?, 8, 8, 16)
         model.add(Conv2D(16, 5, activation='relu', padding='same'))
         model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-        # conv3 (?, 8, 8, 16)
-        # conv3 (?, 4, 4, 16)
-        model.add(Conv2D(16, 5, activation='relu', padding='same'))
-        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # # conv3 (?, 8, 8, 16)
+        # # conv3 (?, 4, 4, 16)
+        # model.add(Conv2D(16, 5, activation='relu', padding='same'))
+        # model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
         # Flatten
         # Flatten the output shape of the final pooling layer such that it's 1D instead of 3D.
         # fc0 (?, 256)
         model.add(Flatten())
         model.add(Dense(256))
-        model.add(Activation("relu"))
+        # model.add(Activation("relu"))
+        model.add(LeakyReLU())
+        model.add(Dropout(0.5))
+
+        # fc1
+        model.add(Dense(84, activation='sigmoid'))
+
         # final softmax layer output prediction of probabilities for each class
         model.add(Dense(self.num_classes))
         model.add(Activation("softmax"))
+
+
         print("model summary")
         print(model.summary())
         if Optimizer == "Adam":

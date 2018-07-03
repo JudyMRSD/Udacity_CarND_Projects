@@ -15,9 +15,9 @@ import numpy as np
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 
-NumEpochs = 200
-Patience = 50
-
+NumEpochs = 30
+Patience = 10
+Channels = 3 
 
 class Pipeline():
     def __init__(self, data_dir, visualize_dir, train_model_path='.', test_model_path='.'):
@@ -41,7 +41,7 @@ class Pipeline():
         print("img_width, img_height, img_channels", self.img_width, self.img_height, img_channels)
         # gray:
         img_channels = 1
-        self.img_params = [self.img_width, self.img_height, img_channels]
+        self.img_params = [self.img_width, self.img_height, Channels]
 
     def buildNetwork(self):
         self.lenet = LeNet(self.num_classes, self.img_params)
@@ -54,9 +54,13 @@ class Pipeline():
         one_hot_y_valid = np_utils.to_categorical(self.dataTool.y_valid, self.num_classes)  # One-hot encode the labels
 
         # train using gray images
-        train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train_gray, one_hot_y_train, batch_size=self.batch_size)
-        validation_XY = (self.dataTool.X_valid_gray, one_hot_y_valid)
-        print("train_generator", train_generator)
+        # train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train_gray, one_hot_y_train, batch_size=self.batch_size)
+        # train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train_norm, one_hot_y_train,
+        #                                                    batch_size=self.batch_size)
+
+        # validation_XY = (self.dataTool.X_valid_gray, one_hot_y_valid)
+        validation_XY = (self.dataTool.X_val_norm, one_hot_y_valid)
+        # print("train_generator", train_generator)
         #history = History()
 
         # monitor the test (validation) loss at each epoch
@@ -69,10 +73,16 @@ class Pipeline():
                      ModelCheckpoint(filepath=self.train_model_path, monitor='val_acc', save_best_only=True)]
         # # steps_per_epoch
         
-        history = self.lenetModel.fit_generator(train_generator,
-                                      epochs=numEpochs,
-                                      callbacks= callbacks,
-                                      validation_data = validation_XY)
+        # history = self.lenetModel.fit_generator(train_generator,
+        #                               epochs=numEpochs,
+        #                               callbacks= callbacks,
+        #                               validation_data = validation_XY)
+        
+
+        history = self.lenetModel.fit(x = self.dataTool.X_train_norm, y = one_hot_y_train,
+                                      batch_size=self.batch_size, epochs=NumEpochs, verbose=1,
+                                      validation_data = validation_XY, shuffle=True)
+
 
         # no callback
         # history = self.lenetModel.fit_generator(train_generator,
