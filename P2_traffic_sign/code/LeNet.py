@@ -1,3 +1,4 @@
+# updated LeNet to use the good parameter
 from keras.models import Sequential
 from keras.layers import Conv2D
 from keras.layers.convolutional import MaxPooling2D
@@ -5,6 +6,9 @@ from keras.layers.core import Activation
 from keras.layers.core import Flatten
 from keras.layers.core import Dense
 import keras
+
+Optimizer = "Adadelta" # Adadelta
+
 
 class LeNet():
     # convlayer_filters, convlayer_kernel_size, padding, activation as input to make parameter tuning easier
@@ -37,13 +41,16 @@ class LeNet():
         model.add(Activation("softmax"))
         print("model summary")
         print(model.summary())
-        model.compile(loss=keras.losses.categorical_crossentropy,
-                      optimizer=keras.optimizers.Adadelta(),
-                      metrics=['accuracy'])
+        if Optimizer == "Adam":
+            model.compile(loss=keras.losses.categorical_crossentropy,
+                          optimizer=keras.optimizers.Adam(),
+                          metrics=['accuracy'])
+        elif (Optimizer == "Adadelta"):
+            model.compile(loss=keras.losses.categorical_crossentropy,
+                          optimizer=keras.optimizers.Adadelta(),
+                          metrics=['accuracy'])
+
         return model
-
-
-
 
 
 

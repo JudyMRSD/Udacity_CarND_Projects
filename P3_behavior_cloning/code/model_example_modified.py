@@ -8,12 +8,12 @@
 # example implementation in : https://github.com/mvpcom/Udacity-CarND-Project-3
 
 # try different settings
-# original setting
+# original setting gpu2
 # Expand_Log = True
 # Less_Zero = True
 
-# turn both off
-Expand_Log = True
+# turn both off gpu 1
+Expand_Log = False
 Less_Zero = True
 
 Param_Name = ""

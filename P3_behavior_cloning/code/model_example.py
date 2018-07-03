@@ -443,9 +443,6 @@ for time in range(numTimes):
     validGenerator = generateBatchVal(XVal, yVal, batchSize=50)
     samplesPerEpoch = 32000 
     nbValSamples = 1000
-    # samplesPerEpoch = 32
-    # nbValSamples = 10
-    #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, verbose=1)
     #history = model.fit_generator(trainGenerator, samplesPerEpoch, numEpoch, 
     #                verbose=1, validation_data=validGenerator, nb_val_samples = nbValSamples,
      #               callbacks=[ModelCheckpoint(filepath="bestVal.h5", verbose=1, save_best_only=True), ReduceLROnPlateau(monitor="val_loss", factor=0.2, patience=2, min_lr=0.000001)])
@@ -454,33 +451,3 @@ for time in range(numTimes):
                 )
     print(thr, 'Time ',time+1)
     thr += (1/(numTimes))
-
-
-# thr = 0.0001 # 0.3
-# print("XTrain.shape", XTrain.shape)
-# print("yTrain.shape", yTrain.shape)
-
-# trainGenerator = generateBatch(XTrain, yTrain, batchSize=50, threshold=thr)
-# validGenerator = generateBatchVal(XVal, yVal, batchSize=20)
-
-# samplesPerEpoch = 32 # batches per epoch 
-# nbValSamples = 4
-
-
-# if (originalHyperparam):
-#         samplesPerEpoch = 32000 # len(yTrain)
-#         nbValSamples = 1000
-
-# print("------------start")
-# # history = model.fit_generator(trainGenerator, samples_per_epoch=samplesPerEpoch, nb_epoch=numEpoch, validation_data=validGenerator,
-# #                 nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath="bestVal"+str(time)+".h5", verbose=1, save_best_only=True)]
-# #             )
-# history = model.fit_generator(trainGenerator, samples_per_epoch=samplesPerEpoch, nb_epoch=numEpoch, validation_data=validGenerator,
-#                 nb_val_samples=nbValSamples) #, callbacks=[ModelCheckpoint(filepath=ModelDir+"bestVal.h5", verbose=1, save_best_only=True)]
-            
-
-# print(thr, 'Time ',time+1)
-# thr += (1/(numTimes))
-
-# for time in range(numTimes):
-    
