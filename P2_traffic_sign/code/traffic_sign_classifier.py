@@ -60,8 +60,10 @@ class Pipeline():
         #                                                    batch_size=self.batch_size)
         train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train, one_hot_y_train,
                                                             batch_size=self.batch_size)
+        valid_generator = self.dataTool.train_datagen.flow(self.dataTool.X_valid, one_hot_y_valid,
+                                                            batch_size=self.batch_size)
         # validation_XY = (self.dataTool.X_valid_gray, one_hot_y_valid)
-        validation_XY = (self.dataTool.X_valid, one_hot_y_valid)
+
         # validation_XY = (self.dataTool.X_val_norm, one_hot_y_valid)
         # print("train_generator", train_generator)
         #history = History()
@@ -77,12 +79,14 @@ class Pipeline():
         # # steps_per_epoch
 
         if DataGen:
+            # validation_XY = (self.dataTool.X_valid, one_hot_y_valid)
             history = self.lenetModel.fit_generator(train_generator,
                                                     epochs=numEpochs,
                                                     callbacks=callbacks,
-                                                    validation_data=validation_XY)
+                                                    validation_data = valid_generator)
+                                                    # validation_data=validation_XY)
         else:
-
+            validation_XY = (self.dataTool.X_val_norm, one_hot_y_valid)
             history = self.lenetModel.fit(x = self.dataTool.X_train_norm, y = one_hot_y_train,
                                           batch_size=self.batch_size, epochs=NumEpochs, verbose=1,
                                           validation_data = validation_XY, shuffle=True)
