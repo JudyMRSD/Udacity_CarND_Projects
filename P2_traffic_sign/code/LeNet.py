@@ -22,11 +22,11 @@ class LeNet():
         model = Sequential()
         # convolution, relu:  conv1 (?, 32, 32, 6)
         # max pool:  conv1 (?, 16, 16, 6)
-        model.add(Conv2D(6, 5, activation='relu',padding='valid', input_shape=(self.img_width, self.img_height, self.img_channels)))
+        model.add(Conv2D(6, 5, activation='relu',padding='same', input_shape=(self.img_width, self.img_height, self.img_channels)))
         model.add(MaxPooling2D(pool_size=(2,2), strides=(2,2)))
         # convolution, relu:  conv2(?, 16, 16, 16)
         # max pool: conv2(?, 8, 8, 16)
-        model.add(Conv2D(16, 5, activation='relu', padding='valid'))
+        model.add(Conv2D(16, 5, activation='relu', padding='same'))
         model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
         # # conv3 (?, 8, 8, 16)
         # # conv3 (?, 4, 4, 16)
@@ -36,7 +36,7 @@ class LeNet():
         # Flatten the output shape of the final pooling layer such that it's 1D instead of 3D.
         # fc0 (?, 256)
         model.add(Flatten())
-        model.add(Dense(128))
+        model.add(Dense(256))
         # model.add(Activation("relu"))
         model.add(LeakyReLU())
         model.add(Dropout(0.5))
@@ -61,6 +61,3 @@ class LeNet():
                           metrics=['accuracy'])
 
         return model
-
-
-

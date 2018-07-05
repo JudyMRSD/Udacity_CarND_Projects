@@ -155,7 +155,7 @@ class DataSetTools():
         if Augment:
             self.train_datagen =ImageDataGenerator(
                             data_format='channels_last',
-                            samplewise_center = True,   # todo : try data = (data - 128) / 128
+                            samplewise_center = True,
                             rotation_range=15,
                             width_shift_range=0.1,
                             height_shift_range=0.1,
@@ -164,6 +164,7 @@ class DataSetTools():
             self.visualizeUniqueImgs(self.y_train, self.X_train_gray, tag='augment', isGray=True)
         else:
             self.train_datagen = ImageDataGenerator(
+                featurewise_center=True,
                 data_format='channels_last')
 
 
