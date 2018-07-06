@@ -73,13 +73,14 @@ class Pipeline():
             img = cv2.resize(img, (self.img_width, self.img_height)) # (32, 32, 3)
             test_imgs.append(img)
         test_imgs = np.array(test_imgs)
-        one_hot_y_test = np_utils.to_categorical(test_labels, self.num_classes)  # One-hot encode the labels
+        # one_hot_y_test = np_utils.to_categorical(test_labels, self.num_classes)  # One-hot encode the labels
 
-        test_generator = self.dataTool.train_datagen.flow(test_imgs, one_hot_y_test)
+        test_generator = self.dataTool.train_datagen.flow(test_imgs)
 
         test_model = load_model(self.test_model_path)
 
         out_prob = test_model.predict_generator(test_generator) # (5, 43)
+        print("out_prob", out_prob)
 
         # for i in range (0, 5):
         #     print("image id = " , i)

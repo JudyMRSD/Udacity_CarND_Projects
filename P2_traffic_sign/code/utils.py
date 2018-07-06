@@ -88,16 +88,13 @@ class DataSetTools():
         # plot unique images
         _, unique_indices = np.unique(labels, return_index=True)
         unique_images = imgs[unique_indices]
-        print("unique_images.shape", unique_images.shape) # (43, 32, 32, 3)
         numImgs = self.n_classes
         numRows = 5
 
         if use_datagen:
             unique_labels = np.arange(self.n_classes)+1
-
             unique_images, label = self.train_datagen.flow(unique_images, unique_labels, self.n_classes).next() # (43, 32, 32, 3)
-            unique_images = np.array(unique_images, dtype=np.uint8)
-            print("data generator unique_images.shape", unique_images.shape)
+            unique_images = np.array(unique_images, dtype=np.uint8) # change to uint8 for plotting
 
         # plot images
         fig = plt.figure()
