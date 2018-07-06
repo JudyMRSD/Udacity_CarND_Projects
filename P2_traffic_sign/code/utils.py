@@ -134,3 +134,17 @@ class DataSetTools():
 
 
 
+    def top_k(self, pred_prob, test_labels, k = 5):
+        out_class = []
+        for i in range(0, len(pred_prob)):
+            print("Top 5 probability for image id = ", i)
+            p = pred_prob[i, :]
+            top_class = np.argsort(p)[:5]
+            out_class.append(top_class[0])
+            top_prob = p[top_class]
+            for j in range(0, k):
+                print("class: {}, prob:{}".format(top_class[j], top_prob[j]))
+        accuracy = np.sum(test_labels == out_class) / len(test_labels)
+        print("Ground truth: ", test_labels)
+        print("Predicted labels", out_class)
+        print("Accuracy on testing images =", accuracy)
