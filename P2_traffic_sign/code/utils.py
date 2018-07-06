@@ -73,7 +73,6 @@ class DataSetTools():
     def visualizeHistogram(self, labels, tag):
         # histogram of classes
         plt.close('all')
-        print("historgram bins arranged by classes ")
         plt.hist(labels, bins=self.n_classes)
         plt.title(tag + "Data Histogram")
         plt.xlabel("Class")
@@ -95,7 +94,7 @@ class DataSetTools():
         fig = plt.figure()
         for i in range(numImgs):
             ax = fig.add_subplot(numRows, len(unique_indices) / numRows + 1, i + 1, xticks=[], yticks=[])
-            ax.set_title(i)
+            ax.set_title(unique_indices[i])
             ax.imshow(unique_images[i])
 
         plt.savefig(self.visualize_dir + tag + '_sample.jpg')
@@ -104,8 +103,6 @@ class DataSetTools():
 
     def data_augment(self):
         # balance using keras ImageDataGenerator
-
-
         self.data_generator = ImageDataGenerator(
                             featurewise_center=True,
                             data_format='channels_last')
@@ -116,9 +113,9 @@ class DataSetTools():
     def load_explore(self):
         self.loadData()
         self.summarizeData()
-
-
+        print("visualize before data augmentation on training data")
         self.visualizeUniqueImgs(self.y_train, self.X_train, tag='train', numImgs = self.n_classes, numRows = 5)
+        print("visualize training data distribution over class")
         self.visualizeHistogram(self.y_train, tag='train')
 
         self.data_augment()
@@ -126,10 +123,8 @@ class DataSetTools():
                                  numImgs = self.n_classes, numRows = 5, data_generator=self.data_generator)
         # summarize dataset info
         img_width, img_height, img_channels = self.image_shape
-        print("img_width, img_height, img_channels", img_width, img_height, img_channels)
-
+        print("image shape: img_width = {}, img_height = {}, img_channels = {}".format(img_width, img_height, img_channels))
         return self.n_classes, img_width, img_height, img_channels
-
 
 
     def top_k(self, pred_prob, test_labels, k = 5):
@@ -137,7 +132,8 @@ class DataSetTools():
         for i in range(0, len(pred_prob)):
             print("Top 5 probability for image id = ", i)
             p = pred_prob[i, :]
-            top_class = np.argsort(p)[:5]
+            # [::-1] reverse the array,  sort from low to high
+            top_class = np.argsort(p)[::-1][:k]# top k
             out_class.append(top_class[0])
             top_prob = p[top_class]
             for j in range(0, k):

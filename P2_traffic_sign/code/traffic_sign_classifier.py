@@ -52,15 +52,15 @@ class Pipeline():
                                                 callbacks=callbacks,
                                                 validation_data = valid_generator)
         # monit training and validation loss
+        print("Visualize training loss and accuracy change")
         self.trainMonitTool.visualizeTrain(self.visualize_dir, history)
 
     def test(self, test_data_dir, test_labels):
-        print("Start testing:")
-
         files = sorted(glob.glob(test_data_dir+'*.jpg'))
         test_imgs = []
         for f in files:
             img = cv2.imread(f)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, (self.img_width, self.img_height)) # (32, 32, 3)
             test_imgs.append(img)
 
@@ -82,7 +82,6 @@ class Pipeline():
 
 
 def main():
-
     data_dir = "../data/"
     visualize_dir =  data_dir+'visualize/'
     test_data_dir = data_dir + 'testImg/'
