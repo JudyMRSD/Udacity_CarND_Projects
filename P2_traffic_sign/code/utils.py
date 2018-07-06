@@ -115,9 +115,13 @@ class DataSetTools():
 
     def data_augment(self):
         # balance using keras ImageDataGenerator
+
+
         self.train_datagen = ImageDataGenerator(
                             featurewise_center=True,
                             data_format='channels_last')
+        # call fit to obtain mean value of the dataset to use in featurewise_center
+        self.train_datagen.fit(self.X_train)
 
 
     def load_explore(self):
