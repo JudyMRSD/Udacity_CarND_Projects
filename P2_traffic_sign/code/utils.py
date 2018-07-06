@@ -7,9 +7,8 @@ import matplotlib.pyplot as plt
 
 from keras.preprocessing.image import ImageDataGenerator
 plt.switch_backend('agg')
-from skimage import exposure
-from collections import defaultdict
-Augment = False
+
+
 class TrainMonitorTools():
     def __init__(self):
         print("train process tool")
@@ -25,7 +24,7 @@ class TrainMonitorTools():
         plt.xlabel('epoch')
         plt.legend(['train', 'test'], loc='upper left')
         plt.savefig(visualize_dir+'acc.jpg')
-        # plt.show()
+        plt.show()
         # summarize history for loss
         plt.close('all')
         plt.plot(history.history['loss'])
@@ -34,17 +33,15 @@ class TrainMonitorTools():
         plt.ylabel('loss')
         plt.xlabel('epoch')
         plt.legend(['train', 'test'], loc='upper left')
-        # plt.show()
+        plt.show()
         plt.savefig(visualize_dir+'loss.jpg')
 
 class DataSetTools():
     def __init__(self, data_dir):
         print("Step 1: Dataset Summary & Exploration")
-        self.X_train_augment = None
         self.data_dir = data_dir
         self.ground_truth_dir = self.data_dir + 'dataset_groundtruth/'
         self.visualize_dir=self.data_dir+'visualize/'
-
 
     def loadData(self):
         print("load trianing and validation data")
@@ -63,11 +60,6 @@ class DataSetTools():
         self.X_valid, self.y_valid = valid['features'], valid['labels']
         self.X_test, self.y_test = test['features'], test['labels']
 
-        self.X_train_gray = self.gray(self.X_train)
-        self.X_valid_gray = self.gray(self.X_valid)
-
-        self.X_train_norm = (self.X_train - 128. )/ 128.
-        self.X_val_norm = (self.X_valid - 128. )/ 128.
 
     def summarizeData(self):
         self.n_train = self.X_train.shape[0]
@@ -81,106 +73,67 @@ class DataSetTools():
         print("Image data shape =", self.image_shape)
         print("Number of classes =", self.n_classes)
 
-    def visualizeHistogram(self, labels, fileName):
+    def visualizeHistogram(self, labels, tag):
         # histogram of classes
         plt.close('all')
         print("historgram bins arranged by classes ")
         plt.hist(labels, bins=self.n_classes)
-        plt.title(fileName + "Data Histogram")
+        plt.title(tag + "Data Histogram")
         plt.xlabel("Class")
         plt.ylabel("Occurence")
-        plt.savefig(self.visualize_dir + fileName + '_histogram.jpg')
-        # plt.show()
+        plt.savefig(self.visualize_dir + tag + '_histogram.jpg')
+        plt.show()
 
-    def visualizeUniqueImgs(self, labels, imgs, tag, isGray):
+    def visualizeUniqueImgs(self, labels, imgs, tag, use_datagen):
         # plot unique images
-
         numRows = 1
 
-        if tag == 'train':
-            print("isGray, train", isGray)
-            _, unique_indices = np.unique(labels, return_index=True)
-            unique_images = imgs[unique_indices]
-            numImgs = self.n_classes
-            numRows = 5
-        elif tag == 'augment':
-            print("isGray, augment", isGray)
-            img = np.expand_dims(imgs[0], 0)
-            label = labels[0:1]
-            unique_images = []
-            numImgs = 10
-            numRows = 5
+        _, unique_indices = np.unique(labels, return_index=True)
+        unique_images = imgs[unique_indices]
+        numImgs = self.n_classes
+        numRows = 5
 
+        if use_datagen:
+            unique_labels = np.arange(self.n_classes)+1
+            datagen_images = []
             for i in range(0,numImgs):
-                aug_img, aug_label = self.train_datagen.flow(img, label).next()
+                datagen_img, label = self.train_datagen.flow(unique_images, unique_labels).next()
                 aug_img = np.squeeze(aug_img)
-                unique_images.append(aug_img)
-                # print("unique_images", len(unique_images))
+                datagen_images.append(datagen_img)
+            unique_images = datagen_images
 
-        elif tag == 'test':
-            print("test visualize")
-            numRows = 5
-            unique_images = imgs
-            numImgs = len(unique_images)
-            print("numImgs", numImgs)
-
+        # plot images
         fig = plt.figure()
         for i in range(numImgs):
             ax = fig.add_subplot(numRows, self.n_classes / numRows + 1, i + 1, xticks=[], yticks=[])
             ax.set_title(i)
-            if isGray == True:
-                ax.imshow(unique_images[i], cmap='gray')
-            else:
-                ax.imshow(unique_images[i])
+            ax.imshow(unique_images[i])
 
         plt.savefig(self.visualize_dir + tag + '_sample')
-        # plt.show()
-        # plt.close('all')
-
-
-    def visualizeData(self, tag):
-        # two options, training visualize and augmented data visualize
-        if tag == 'train':
-            isGray = False
-            imgs, labels = self.X_train, self.y_train
-        elif tag == 'augment':
-            isGray = True
-            imgs, labels = self.X_train_augment, self.y_train
-
-        self.visualizeHistogram(labels, tag)
-        self.visualizeUniqueImgs(labels, imgs, tag, isGray)
+        plt.show()
+        plt.close('all')
 
     def data_augment(self):
         # balance using keras ImageDataGenerator
-        if Augment:
-            self.train_datagen =ImageDataGenerator(
-                            data_format='channels_last',
-                            samplewise_center = True,
-                            rotation_range=15,
-                            width_shift_range=0.1,
-                            height_shift_range=0.1,
-                            zoom_range=0.2,
-                            horizontal_flip=True)
-            self.visualizeUniqueImgs(self.y_train, self.X_train_gray, tag='augment', isGray=True)
-        else:
-            self.train_datagen = ImageDataGenerator(
-                featurewise_center=True,
-                data_format='channels_last')
+        self.train_datagen = ImageDataGenerator(
+                            featurewise_center=True,
+                            data_format='channels_last')
 
 
-    def gray(self, X):
-        # shape is tuple, not mutable
-        print("x shape", X.shape) # (34799, 32, 32, 3)
-        singleChannelShape = X.shape[0:3]
-        # set to single channel
-        X_singleChannel = np.zeros(singleChannelShape)
-        print("X_singleChannel shape", X_singleChannel.shape) # (34799, 32, 32)
+    def load_explore(self):
+        self.loadData()
+        self.summarizeData()
+        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='train', use_datagen=False)
+        self.visualizeHistogram(self.y_train, tag='train')
 
-        for i in range(0, len(X)):
-            img = X[i]
-            gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-            X_singleChannel[i] = gray_img
+        self.data_augment()
+        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='train_aug',
+                                          use_datagen=False)
+        # summarize dataset info
+        img_width, img_height, img_channels = self.image_shape
+        print("img_width, img_height, img_channels", img_width, img_height, img_channels)
 
-        X_singleChannel =  np.expand_dims(X_singleChannel, axis=3) # (34799, 32, 32, 1)
-        print("X_singleChannel shape", X_singleChannel.shape)
-        return X_singleChannel
+        return self.n_classes, img_width, img_height, img_channels
+
+
+

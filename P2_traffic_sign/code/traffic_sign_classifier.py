@@ -15,10 +15,8 @@ import numpy as np
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 
-NumEpochs = 30
-Patience = 10
-Channels = 3
-DataGen = False
+NumEpochs = 20 # train for 20 epochs
+Patience = 5 # early stop training if evaluation performance is not increasing after 5 epochs
 
 class Pipeline():
     def __init__(self, data_dir, visualize_dir, train_model_path='.', test_model_path='.'):
@@ -29,20 +27,12 @@ class Pipeline():
         self.test_model_path = test_model_path
         self.batch_size = 128
 
-    def exploreDataset(self):
+    def load_explore_dataset(self):
         # load data
         self.dataTool = DataSetTools(self.data_dir)
-        self.dataTool.loadData()
-        self.dataTool.summarizeData()
-        self.dataTool.visualizeData(tag='train')
-        self.dataTool.data_augment()
-        # summarize dataset info
-        self.num_classes = self.dataTool.n_classes
-        self.img_width, self.img_height, img_channels = self.dataTool.image_shape
-        print("img_width, img_height, img_channels", self.img_width, self.img_height, img_channels)
-        # gray:
-        img_channels = 1
-        self.img_params = [self.img_width, self.img_height, Channels]
+
+        self.num_classes, self.img_width, self.img_height, img_channels = self.dataTool.load_explore()
+        self.img_params = [self.img_width, self.img_height, img_channels]
 
     def buildNetwork(self):
         self.lenet = LeNet(self.num_classes, self.img_params)
@@ -54,89 +44,73 @@ class Pipeline():
         one_hot_y_train = np_utils.to_categorical(self.dataTool.y_train, self.num_classes)  # One-hot encode the labels
         one_hot_y_valid = np_utils.to_categorical(self.dataTool.y_valid, self.num_classes)  # One-hot encode the labels
 
-        # train using gray images
-        # train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train_gray, one_hot_y_train, batch_size=self.batch_size)
-        # train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train_norm, one_hot_y_train,
-        #                                                    batch_size=self.batch_size)
         train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train, one_hot_y_train,
                                                             batch_size=self.batch_size)
         valid_generator = self.dataTool.train_datagen.flow(self.dataTool.X_valid, one_hot_y_valid,
                                                             batch_size=self.batch_size)
-        # validation_XY = (self.dataTool.X_valid_gray, one_hot_y_valid)
-
-        # validation_XY = (self.dataTool.X_val_norm, one_hot_y_valid)
-        # print("train_generator", train_generator)
-        #history = History()
-
-        # monitor the test (validation) loss at each epoch
-        # and after the test loss has not improved after two epochs, training is interrupted
+        # monitor the validation accuracy at each epoch
+        # and after the validation accuracy has not improved after two epochs, training is interrupted
         # only best model is saved (without save_best_only, model 2 epochs after the best will be saved)
-        
-
-
         callbacks = [EarlyStopping(monitor='val_acc', patience=Patience),
                      ModelCheckpoint(filepath=self.train_model_path, monitor='val_acc', save_best_only=True)]
-        # # steps_per_epoch
-
-        if DataGen:
-            # validation_XY = (self.dataTool.X_valid, one_hot_y_valid)
-            history = self.lenetModel.fit_generator(train_generator,
-                                                    epochs=numEpochs,
-                                                    callbacks=callbacks,
-                                                    validation_data = valid_generator)
-                                                    # validation_data=validation_XY)
-        else:
-            validation_XY = (self.dataTool.X_val_norm, one_hot_y_valid)
-            history = self.lenetModel.fit(x = self.dataTool.X_train_norm, y = one_hot_y_train,
-                                          batch_size=self.batch_size, epochs=NumEpochs, verbose=1,
-                                          validation_data = validation_XY, shuffle=True)
-
-        # no callback
-        # history = self.lenetModel.fit_generator(train_generator,
-        #                               epochs=numEpochs,
-        #                               validation_data = validation_XY)
-        # model.save(self.train_model_path)
+        history = self.lenetModel.fit_generator(train_generator,
+                                                epochs=numEpochs,
+                                                callbacks=callbacks,
+                                                validation_data = valid_generator)
+        # monit training and validation loss
         self.trainMonitTool.visualizeTrain(self.visualize_dir, history)
 
-
     def test(self, test_data_dir, test_labels):
-        print("enter test:")
-        files = sorted(glob.glob(test_data_dir+'*.jpg'))
-        color_test_imgs = []
-        test_images = []
 
+        print("Start testing:")
+
+
+
+        files = sorted(glob.glob(test_data_dir+'*.jpg'))
+        test_imgs = []
         for f in files:
             img = cv2.imread(f)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = cv2.resize(img, (self.img_width, self.img_height)) # (32, 32, 3)
-            gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # (32, 32)
-            gray_img = np.expand_dims(gray_img, 2)  # (32, 32, 1)
-            color_test_imgs.append(img)
-            test_images.append(gray_img)
-        test_images = np.array(test_images)
-        print("test_images shape", test_images.shape)
-        # convert images to a 4D tensor to feed into keras model
+            test_imgs.append(img)
+        test_imgs = np.array(test_imgs)
+        one_hot_y_test = np_utils.to_categorical(test_labels, self.num_classes)  # One-hot encode the labels
+
+        test_generator = self.dataTool.train_datagen.flow(test_imgs, one_hot_y_test)
+
         test_model = load_model(self.test_model_path)
-        # out = test_model.predict(test_images)
-        out_class = test_model.predict_classes(test_images)
-        self.dataTool.visualizeUniqueImgs(test_labels, color_test_imgs, tag="test", isGray=False)
-        print("test_labels", test_labels)
-        print("out class", out_class) # out class [12 25  0 14 13]
+
+        out_prob = test_model.predict_generator(test_generator) # (5, 43)
+
+        # for i in range (0, 5):
+        #     print("image id = " , i)
+        #     p = out_prob[i, :]
+        #     top_class = np.argsort(p)[:5]
+        #     print("top class", top_class)
+        #     top_prob = p[top_class]
+        #     print("top_prob", top_prob)
+        #     for j in range (0,5):
+        #         print(top_class[j], top_prob[j])
+        #         print("class: {}, prob:{}".format(top_class[j], top_prob[j]))
+        #
+        # # self.dataTool.visualizeUniqueImgs(test_labels, rgb_color_test_imgs, tag="test", isGray=False)
+        # self.dataTool.visualizeUniqueImgs(test_labels, color_test_imgs, tag="test", isGray=False)
+        #
+        # print("test_labels", test_labels)
+        # accuracy = np.sum(test_labels==out_class) / len(test_labels)
+        # print("accuracy=",accuracy)
+
 
 def main():
-    # set input training image directory
-    # run pipeline
-    # output classification results
+
     data_dir = "../data/"
     visualize_dir =  data_dir+'visualize/'
-    test_data_dir = data_dir+'googleImg/'
-    ground_truth = data_dir+'dataset_groundtruth/'
+    test_data_dir = data_dir + 'testImg/'
     model_path = data_dir+'model/trafficSign_model.h5'
-    test_labels = [34, 25, 3, 14, 13]
+    test_labels = [13, 3, 14, 27, 40]
     traffic_sign_pipeline = Pipeline(data_dir, visualize_dir, train_model_path= model_path, test_model_path= model_path)
-    traffic_sign_pipeline.exploreDataset()
-    traffic_sign_pipeline.buildNetwork()
-    traffic_sign_pipeline.train(numEpochs=NumEpochs)
+    traffic_sign_pipeline.load_explore_dataset()
+    # traffic_sign_pipeline.buildNetwork()
+    # traffic_sign_pipeline.train(numEpochs=NumEpochs)
     traffic_sign_pipeline.test(test_data_dir, test_labels)
 
 if __name__ == '__main__':
