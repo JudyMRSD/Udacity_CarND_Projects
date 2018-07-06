@@ -109,8 +109,8 @@ def main():
     test_labels = [13, 3, 14, 27, 40]
     traffic_sign_pipeline = Pipeline(data_dir, visualize_dir, train_model_path= model_path, test_model_path= model_path)
     traffic_sign_pipeline.load_explore_dataset()
-    traffic_sign_pipeline.buildNetwork()
-    traffic_sign_pipeline.train(numEpochs=NumEpochs)
+    # traffic_sign_pipeline.buildNetwork()
+    # traffic_sign_pipeline.train(numEpochs=NumEpochs)
     traffic_sign_pipeline.test(test_data_dir, test_labels)
 
 if __name__ == '__main__':

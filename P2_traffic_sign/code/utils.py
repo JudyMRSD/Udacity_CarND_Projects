@@ -86,21 +86,18 @@ class DataSetTools():
 
     def visualizeUniqueImgs(self, labels, imgs, tag, use_datagen):
         # plot unique images
-        numRows = 1
-
         _, unique_indices = np.unique(labels, return_index=True)
         unique_images = imgs[unique_indices]
+        print("unique_images.shape", unique_images.shape) # (43, 32, 32, 3)
         numImgs = self.n_classes
         numRows = 5
 
         if use_datagen:
             unique_labels = np.arange(self.n_classes)+1
-            datagen_images = []
-            for i in range(0,numImgs):
-                datagen_img, label = self.train_datagen.flow(unique_images, unique_labels).next()
-                aug_img = np.squeeze(aug_img)
-                datagen_images.append(datagen_img)
-            unique_images = datagen_images
+
+            unique_images, label = self.train_datagen.flow(unique_images, unique_labels, self.n_classes).next() # (43, 32, 32, 3)
+            unique_images = np.array(unique_images, dtype=np.uint8)
+            print("data generator unique_images.shape", unique_images.shape)
 
         # plot images
         fig = plt.figure()
@@ -109,8 +106,8 @@ class DataSetTools():
             ax.set_title(i)
             ax.imshow(unique_images[i])
 
-        plt.savefig(self.visualize_dir + tag + '_sample')
-        plt.show()
+        plt.savefig(self.visualize_dir + tag + '_sample.jpg')
+        # plt.show()
         plt.close('all')
 
     def data_augment(self):
@@ -131,8 +128,7 @@ class DataSetTools():
         self.visualizeHistogram(self.y_train, tag='train')
 
         self.data_augment()
-        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='train_aug',
-                                          use_datagen=False)
+        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='train_aug', use_datagen=True)
         # summarize dataset info
         img_width, img_height, img_channels = self.image_shape
         print("img_width, img_height, img_channels", img_width, img_height, img_channels)
