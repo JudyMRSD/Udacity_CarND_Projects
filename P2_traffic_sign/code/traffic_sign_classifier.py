@@ -80,25 +80,22 @@ class Pipeline():
         test_model = load_model(self.test_model_path)
 
         out_prob = test_model.predict_generator(test_generator) # (5, 43)
-        print("out_prob", out_prob)
 
-        # for i in range (0, 5):
-        #     print("image id = " , i)
-        #     p = out_prob[i, :]
-        #     top_class = np.argsort(p)[:5]
-        #     print("top class", top_class)
-        #     top_prob = p[top_class]
-        #     print("top_prob", top_prob)
-        #     for j in range (0,5):
-        #         print(top_class[j], top_prob[j])
-        #         print("class: {}, prob:{}".format(top_class[j], top_prob[j]))
-        #
-        # # self.dataTool.visualizeUniqueImgs(test_labels, rgb_color_test_imgs, tag="test", isGray=False)
-        # self.dataTool.visualizeUniqueImgs(test_labels, color_test_imgs, tag="test", isGray=False)
-        #
-        # print("test_labels", test_labels)
-        # accuracy = np.sum(test_labels==out_class) / len(test_labels)
-        # print("accuracy=",accuracy)
+        top_k = 5
+
+        out_class = []
+        for i in range (0, len(out_prob)):
+            print("Top 5 probability for image id = ", i)
+            p = out_prob[i, :]
+            top_class = np.argsort(p)[:5]
+            out_class.append(top_class[0])
+            top_prob = p[top_class]
+            for j in range (0,top_k):
+                print("class: {}, prob:{}".format(top_class[j], top_prob[j]))
+
+
+        accuracy = np.sum(test_labels==out_class) / len(test_labels)
+        print("Accuracy on testing images =",accuracy)
 
 
 def main():
