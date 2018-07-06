@@ -81,7 +81,7 @@ class DataSetTools():
         plt.savefig(self.visualize_dir + tag + '_histogram.jpg')
         plt.show()
 
-    def visualizeUniqueImgs(self, labels, imgs, tag,  , numRows, data_generator = None):
+    def visualizeUniqueImgs(self, labels, imgs, tag, numImgs, numRows, data_generator = None):
         # plot unique images
         _, unique_indices = np.unique(labels, return_index=True)
         unique_images = imgs[unique_indices]
