@@ -1,6 +1,4 @@
-import cv2
 import pickle
-import collections
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,7 +11,6 @@ class TrainMonitorTools():
     def __init__(self):
         print("train process tool")
     def visualizeTrain(self, visualize_dir, history):
-        # plot code from tutorial: https://machinelearningmastery.com/display-deep-learning-model-training-history-in-keras/
         print(history.history.keys())  # dict_keys(['val_acc', 'acc', 'loss', 'val_loss'])
         plt.close('all')
         # summarize history for accuracy
@@ -27,6 +24,7 @@ class TrainMonitorTools():
         plt.show()
         # summarize history for loss
         plt.close('all')
+
         plt.plot(history.history['loss'])
         plt.plot(history.history['val_loss'])
         plt.title('model loss')
@@ -38,7 +36,6 @@ class TrainMonitorTools():
 
 class DataSetTools():
     def __init__(self, data_dir):
-        print("Step 1: Dataset Summary & Exploration")
         self.data_dir = data_dir
         self.ground_truth_dir = self.data_dir + 'dataset_groundtruth/'
         self.visualize_dir=self.data_dir+'visualize/'
@@ -84,48 +81,49 @@ class DataSetTools():
         plt.savefig(self.visualize_dir + tag + '_histogram.jpg')
         plt.show()
 
-    def visualizeUniqueImgs(self, labels, imgs, tag, use_datagen):
+    def visualizeUniqueImgs(self, labels, imgs, tag,  , numRows, data_generator = None):
         # plot unique images
         _, unique_indices = np.unique(labels, return_index=True)
         unique_images = imgs[unique_indices]
-        numImgs = self.n_classes
-        numRows = 5
 
-        if use_datagen:
-            unique_labels = np.arange(self.n_classes)+1
-            unique_images, label = self.train_datagen.flow(unique_images, unique_labels, self.n_classes).next() # (43, 32, 32, 3)
+        if data_generator:
+            unique_labels = np.arange(len(unique_indices))+1
+            unique_images, label = data_generator.flow(unique_images, unique_labels, len(unique_indices)).next() # (43, 32, 32, 3)
             unique_images = np.array(unique_images, dtype=np.uint8) # change to uint8 for plotting
 
         # plot images
         fig = plt.figure()
         for i in range(numImgs):
-            ax = fig.add_subplot(numRows, self.n_classes / numRows + 1, i + 1, xticks=[], yticks=[])
+            ax = fig.add_subplot(numRows, len(unique_indices) / numRows + 1, i + 1, xticks=[], yticks=[])
             ax.set_title(i)
             ax.imshow(unique_images[i])
 
         plt.savefig(self.visualize_dir + tag + '_sample.jpg')
-        # plt.show()
+        plt.show()
         plt.close('all')
 
     def data_augment(self):
         # balance using keras ImageDataGenerator
 
 
-        self.train_datagen = ImageDataGenerator(
+        self.data_generator = ImageDataGenerator(
                             featurewise_center=True,
                             data_format='channels_last')
         # call fit to obtain mean value of the dataset to use in featurewise_center
-        self.train_datagen.fit(self.X_train)
+        self.data_generator.fit(self.X_train)
 
 
     def load_explore(self):
         self.loadData()
         self.summarizeData()
-        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='train', use_datagen=False)
+
+
+        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='train', numImgs = self.n_classes, numRows = 5)
         self.visualizeHistogram(self.y_train, tag='train')
 
         self.data_augment()
-        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='train_aug', use_datagen=True)
+        self.visualizeUniqueImgs(self.y_train, self.X_train, tag='train_aug',
+                                 numImgs = self.n_classes, numRows = 5, data_generator=self.data_generator)
         # summarize dataset info
         img_width, img_height, img_channels = self.image_shape
         print("img_width, img_height, img_channels", img_width, img_height, img_channels)

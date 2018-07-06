@@ -1,13 +1,7 @@
-# todo: add early stopping using validation accuracy
-# https://stackoverflow.com/questions/43906048/keras-early-stopping
-
-
 from LeNet import LeNet
-import matplotlib.pyplot as plt
 
 from utils import DataSetTools, TrainMonitorTools
 from keras.utils import np_utils # utilities for one-hot encoding of ground truth values
-from keras.callbacks import History
 import glob
 from keras.models import load_model
 import cv2
@@ -44,9 +38,9 @@ class Pipeline():
         one_hot_y_train = np_utils.to_categorical(self.dataTool.y_train, self.num_classes)  # One-hot encode the labels
         one_hot_y_valid = np_utils.to_categorical(self.dataTool.y_valid, self.num_classes)  # One-hot encode the labels
 
-        train_generator = self.dataTool.train_datagen.flow(self.dataTool.X_train, one_hot_y_train,
+        train_generator = self.dataTool.data_generator.flow(self.dataTool.X_train, one_hot_y_train,
                                                             batch_size=self.batch_size)
-        valid_generator = self.dataTool.train_datagen.flow(self.dataTool.X_valid, one_hot_y_valid,
+        valid_generator = self.dataTool.data_generator.flow(self.dataTool.X_valid, one_hot_y_valid,
                                                             batch_size=self.batch_size)
         # monitor the validation accuracy at each epoch
         # and after the validation accuracy has not improved after two epochs, training is interrupted
@@ -71,7 +65,15 @@ class Pipeline():
             test_imgs.append(img)
 
         test_imgs = np.array(test_imgs)
-        test_generator = self.dataTool.train_datagen.flow(test_imgs)
+        test_generator = self.dataTool.data_generator.flow(test_imgs)
+
+        print("visualize before data augmentation on testing data")
+        self.dataTool.visualizeUniqueImgs(test_labels, test_imgs, tag='test',
+                                          numImgs = len(test_imgs), numRows = 1)
+        print("visualize after data augmentation on testing data")
+        self.dataTool.visualizeUniqueImgs(test_labels, test_imgs, tag='test_aug',
+                                          numImgs = len(test_imgs), numRows = 1,
+                                          data_generator=self.dataTool.data_generator)
         test_model = load_model(self.test_model_path)
         pred_prob = test_model.predict_generator(test_generator) # (5, 43)
 
@@ -87,9 +89,13 @@ def main():
     model_path = data_dir+'model/trafficSign_model.h5'
     test_labels = [13, 3, 14, 27, 40]
     traffic_sign_pipeline = Pipeline(data_dir, visualize_dir, train_model_path= model_path, test_model_path= model_path)
+    print("Step 1: Dataset Summary & Exploration")
     traffic_sign_pipeline.load_explore_dataset()
+    # print("Step 2: Build network")
     # traffic_sign_pipeline.buildNetwork()
+    # print("Step 3: Train network")
     # traffic_sign_pipeline.train(numEpochs=NumEpochs)
+    print("Step 4: Test on new testing images from outside the dataset")
     traffic_sign_pipeline.test(test_data_dir, test_labels)
 
 if __name__ == '__main__':
