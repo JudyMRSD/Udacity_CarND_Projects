@@ -147,6 +147,7 @@ def generateBatch(data, labels, batchSize=10, threshold=0.2):
             steeringAngle = labels[idx]
 
             imgLoc = data['Center'][idx]
+
             image = loadImg(imgLoc, True) 
 
             # randomly augment data

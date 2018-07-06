@@ -3,7 +3,7 @@
 
 # crop layer example from Udacity
 # crop 50 rows piexels from top of the image and 20 rows from bottom of the image
-Top_Crop = 50
+Top_Crop = 60
 Bottom_Crop = 20
 # Input_Shape = (3,160,320)
 Input_Shape = (160,320,3)
@@ -21,9 +21,12 @@ ModelDir = "../data/model/"
 Driving_Log_Path = "../data/driving_log.csv"
 Img_Data_Dir = "../data/IMG/"
 Debug_Dir = "../data/debug/"
-Num_Epochs = 500
+Num_Epochs = 17
 Vis = True # visualize output for debugging
-
+Batch_size = 25  # 50 in the example
+Num_Val_Samples = 1000 # param from example
+Num_Train_Samples = 32000  # param from example
+Model_Name = ModelDir+'july5_model.h5'
 class Pipeline():
     def __init__(self):
         print("init")
@@ -33,9 +36,10 @@ class Pipeline():
         self.visUtil = VisualizeUtil()
         print(self.learning_rate)
 
-    def train(self, train_model_path):
+    def train(self):
         num_train_samples, num_validation_samples, train_generator, validation_generator = \
-            self.dataUtil.train_val_generator(csv_path = Driving_Log_Path, image_dir=Img_Data_Dir, debug_dir = Debug_Dir)
+            self.dataUtil.train_val_generator(csv_path = Driving_Log_Path, image_dir=Img_Data_Dir,
+                                              debug_dir = Debug_Dir, batch_size=Batch_size)
 
         if Vis:
             self.visUtil.vis_generator(train_generator, "remove_small_angles", save_dir=Debug_Dir)
@@ -44,25 +48,27 @@ class Pipeline():
         model = self.modelUtil.create_network(Top_Crop, Bottom_Crop, Input_Shape)
         # TODO: add callbacks
         # TODO: add data augmentation
-        callbacks = [EarlyStopping(monitor='val_loss', patience=2),
-                     ModelCheckpoint(filepath=train_model_path, monitor='val_loss', save_best_only=True)]
+        # patience = 20 essentially turned off patience param
+        print("save to : ", Model_Name)
+        callbacks = [EarlyStopping(monitor='val_loss', patience=20),
+                     ModelCheckpoint(filepath=Model_Name, monitor='val_loss', save_best_only=True)]
         print("num_train_samples",num_train_samples)
         print("num_validation_samples", num_validation_samples)
 
         model.fit_generator(train_generator,
-                            samples_per_epoch= num_train_samples,
+                            samples_per_epoch= Num_Train_Samples,
                             validation_data=validation_generator,
-                            nb_val_samples=num_validation_samples,
+                            nb_val_samples=Num_Val_Samples,
                             nb_epoch=Num_Epochs,
                             callbacks=callbacks,
                             verbose=1)
-        model.save(ModelDir + 'model.h5')
+        model.save(Model_Name)
         # TODO: test on X_test, y_test, print accuracy
 
 def main():
     print("main function from model.py")
     pl = Pipeline()
-    pl.train(train_model_path= ModelDir + "model.h5")
+    pl.train()
 
 
 

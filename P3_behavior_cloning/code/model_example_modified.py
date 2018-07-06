@@ -14,7 +14,7 @@
 
 # turn both off gpu 1
 Expand_Log = False
-Less_Zero = True
+Less_Zero = False
 
 Param_Name = ""
 if Expand_Log:
@@ -91,11 +91,12 @@ def generateBatch(data, labels, batchSize=10,):
         counter = 0
         while counter <= batchSize - 1:
             # print("counter", counter)
-            idx = np.random.randint(len(labels) - 1)
+            idx = np.random.randint(len(labels) - 1) + 1 # + 1 to make sure not taking 0th index
             if (idx>len(labels)-1):
                 print("idx=",idx, " len(labels)-1=", len(labels)-1)
-
+            #print("idx", idx)
             steeringAngle = labels[idx]
+            # print("steeringAngle", steeringAngle)
 
             imgLoc = data['Center'][idx]
             image = loadImg(imgLoc, True)
@@ -177,7 +178,7 @@ if (Less_Zero):
 
 # split train ,val
 XTrain, XVal, yTrain, yVal = train_test_split(drivingLog,drivingLog['Steering Angle'],test_size=0.20,random_state=0)
-
+print("drivingLog[0]", drivingLog['Steering Angle'][:2])
 XTrain = drivingLog
 yTrain = drivingLog['Steering Angle']
 XVal = drivingLogTest
@@ -234,5 +235,5 @@ validGenerator = generateBatchVal(XVal, yVal, batchSize=50)
 samplesPerEpoch = 32000
 nbValSamples = 1000
 history = model.fit_generator(trainGenerator, samples_per_epoch=samplesPerEpoch, nb_epoch=numEpoch, validation_data=validGenerator,
-                nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath=ModelDir+Param_Name+"bestVal.h5", verbose=1, save_best_only=True)]
+                nb_val_samples=nbValSamples, callbacks=[ModelCheckpoint(filepath=ModelDir+Param_Name+"July5.h5", verbose=1, save_best_only=True)]
             )

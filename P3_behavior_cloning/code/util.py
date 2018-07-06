@@ -57,6 +57,7 @@ class ModelUtil():
         # https://github.com/mvpcom/Udacity-CarND-Project-3/blob/master/model.ipynb
         self.model = Sequential()
         # preprocess layers
+        # ((top_crop, bottom_crop), (left_crop, right_crop))
         self.model.add(Cropping2D(cropping=((top_crop, bottom_crop), (0, 0)), input_shape=input_shape))
         self.model.add(Lambda(lambda x: (x / 255.0) - 0.5))
         # conv layers
@@ -142,16 +143,17 @@ class DataUtil():
 
         shifted_images = []
         shifted_angles = []
+        # in example, image is downsampled 1/2 size, so here need to adjust params
         for i in range (self.num_shift):
             # my code
             img_h, img_w, _ = image.shape
-            x_shift_range = 100
+            x_shift_range = 200 #100
             # np.random.rand() - 0.5  random number (0, 1) -> (-0.5 , 0.5)
             trans_x = x_shift_range * (np.random.rand() - 0.5)
-            y_shift_range = 5
+            y_shift_range = 20 #10
             trans_y = y_shift_range * (np.random.rand() - 0.5)
             # for every pixel shift in x direction, change angle by angle_per_pix
-            angle_per_pix = 0.8
+            angle_per_pix = 0.4 #0.8
             shifted_ang = angle + trans_x/x_shift_range * angle_per_pix
             affine_matrix = np.array([[1, 0 , trans_x],
                                       [0, 1, trans_y]], dtype = np.float32)
@@ -175,7 +177,7 @@ class DataUtil():
         # https: // github.com / jeremy - shannon / CarND - Behavioral - Cloning - Project
         pass
 
-    def generator(self, samples, is_train, batch_size=32):
+    def generator(self, samples, is_train, batch_size=10): # 10 is parameter from example
         num_samples = len(samples)
         print("num_samples", num_samples)
         while 1:  # Loop forever so the generator never terminates
@@ -192,7 +194,7 @@ class DataUtil():
                 y_train = np.array(angles)
                 yield sklearn.utils.shuffle(X_train, y_train)
 
-    def train_val_generator(self, csv_path,image_dir, debug_dir):
+    def train_val_generator(self, csv_path,image_dir, debug_dir, batch_size):
         self.image_dir = image_dir
         self.debug_dir = debug_dir
         self.num_shift = 10
@@ -212,9 +214,9 @@ class DataUtil():
         num_validation_samples = len(validation_samples)
 
         print("create generator")
-        train_generator = self.generator(train_samples, is_train = True, batch_size=4)
+        train_generator = self.generator(train_samples, is_train = True, batch_size=batch_size)
 
-        validation_generator = self.generator(validation_samples,  is_train=False, batch_size=4)
+        validation_generator = self.generator(validation_samples,  is_train=False, batch_size=batch_size)
 
         return  num_train_samples, num_validation_samples, train_generator, validation_generator
 

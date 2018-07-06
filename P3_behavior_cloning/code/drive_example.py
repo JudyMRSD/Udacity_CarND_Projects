@@ -26,8 +26,8 @@ model = None
 prev_image_array = None
 def processFunc(image):
     
-    image = image[60:-20,:,:]
-    image = cv2.resize(image,(0,0),fx=0.5,fy=0.5)
+    image = image[60:-20,:,:]  # (80, 320, 3)
+    image = cv2.resize(image,(0,0),fx=0.5,fy=0.5) # (40, 160, 3)
     
     return image
 
