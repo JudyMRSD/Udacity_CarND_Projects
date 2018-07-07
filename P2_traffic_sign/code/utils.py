@@ -87,14 +87,14 @@ class DataSetTools():
 
         if data_generator:
             unique_labels = np.arange(len(unique_indices))+1
-            unique_images, label = data_generator.flow(unique_images, unique_labels, len(unique_indices)).next() # (43, 32, 32, 3)
+            unique_images, label = data_generator.flow(unique_images, unique_labels, len(unique_indices), shuffle=False).next() # (43, 32, 32, 3)
             unique_images = np.array(unique_images, dtype=np.uint8) # change to uint8 for plotting
 
         # plot images
         fig = plt.figure()
         for i in range(numImgs):
             ax = fig.add_subplot(numRows, len(unique_indices) / numRows + 1, i + 1, xticks=[], yticks=[])
-            ax.set_title(unique_indices[i])
+            ax.set_title(labels[unique_indices[i]])
             ax.imshow(unique_images[i])
 
         plt.savefig(self.visualize_dir + tag + '_sample.jpg')
@@ -138,7 +138,9 @@ class DataSetTools():
             top_prob = p[top_class]
             for j in range(0, k):
                 print("class: {}, prob:{}".format(top_class[j], top_prob[j]))
-        accuracy = np.sum(test_labels == out_class) / len(test_labels)
+        test_labels = np.array(test_labels)
+        out_class = np.array(out_class)
+        accuracy = np.sum(test_labels == out_class).astype(float) / len(test_labels)
         print("Ground truth: ", test_labels)
         print("Predicted labels", out_class)
         print("Accuracy on testing images =", accuracy)

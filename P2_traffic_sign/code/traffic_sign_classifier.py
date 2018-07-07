@@ -65,8 +65,8 @@ class Pipeline():
             test_imgs.append(img)
 
         test_imgs = np.array(test_imgs)
-        test_generator = self.dataTool.data_generator.flow(test_imgs)
-
+        test_generator = self.dataTool.data_generator.flow(test_imgs, shuffle=False)
+        print("visualization for testing")
         print("visualize before data augmentation on testing data")
         self.dataTool.visualizeUniqueImgs(test_labels, test_imgs, tag='test',
                                           numImgs = len(test_imgs), numRows = 1)
