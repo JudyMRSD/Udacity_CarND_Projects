@@ -37,7 +37,7 @@ class Pipeline():
         self.trainMonitTool = TrainMonitorTools()
         one_hot_y_train = np_utils.to_categorical(self.dataTool.y_train, self.num_classes)  # One-hot encode the labels
         one_hot_y_valid = np_utils.to_categorical(self.dataTool.y_valid, self.num_classes)  # One-hot encode the labels
-
+        
         train_generator = self.dataTool.data_generator.flow(self.dataTool.X_train, one_hot_y_train,
                                                             batch_size=self.batch_size)
         valid_generator = self.dataTool.data_generator.flow(self.dataTool.X_valid, one_hot_y_valid,
