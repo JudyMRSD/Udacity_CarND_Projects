@@ -1,8 +1,6 @@
-TODO: move to ipynb
-
 # Traffic Sign Classifier Pipeline
 -----
-# Overview
+## Overview
 The goals / steps of this project are the following:
 * Load the data set (see below for links to the project data set)
 * Explore, summarize and visualize the data set
@@ -10,7 +8,7 @@ The goals / steps of this project are the following:
 * Use the model to make predictions on new images
 * Analyze the softmax probabilities of the new images
 
-# File Structure
+## File Structure
 Run the piepeline using either `traffic_sign_classifier.py` or `Traffic_Sign_Classifier.ipynb`
 Since I was training on GPU and ipynb isn't very friendly with that, I used traffic_sign_classifier.py 
 instead. As a result, the training process wasn't recorded in ipynb and HTML file. 
@@ -32,7 +30,7 @@ project
 |   └───visualize/                   *.jpg images for visualization
 ```
 
-# Reference:
+## Reference:
 Adapted LeNet keras code from: </br>
 `https://github.com/f00-/mnist-lenet-keras/blob/master/lenet.py`</br>
 Adapted data augmentation idea from: </br>
@@ -50,11 +48,11 @@ Keras early stopping tutorial:</br>
 
 Testing images from :</br>
 https://github.com/mohamedameen93/German-Traffic-Sign-Classification-Using-TensorFlow
-# Data Set Summary & Exploration
+## Data Set Summary & Exploration
 Implementation is class DataSetTools() in utils.py</br>
 Visualization and summary are shown in Traffic_Sign_Classifier.ipynb </br>
 
-# Design and Test a Model Architecture
+## Design and Test a Model Architecture
 |experiment id|Validation Accuracy	| Image Augmentation	|  Network Architecture  |
 |----|-------|-------------------------------------|------------------------------|
 |0 | 0.8	| gray, r=15, w=0.1, h=0.1, z=0.2, hf, sn|c(6,5,relu), c(16, 5, relu), c(16, 5, relu), F, d(256, relu)|
@@ -65,6 +63,8 @@ Visualization and summary are shown in Traffic_Sign_Classifier.ipynb </br>
 |5 |0.94   | color, **n128** | c(6,5,relu), c(16, 5, relu), F, d(256, relu, leakyRelu, 0.5),  d(84, sigmoid) |
 |6 |0.956  after 27 epochs | color, n128| c(6,5,relu, **v**), c(16, 5, relu, **v**), F, d(**128**, leakyRelu, 0.5),  d(84, sigmoid) |
 |7 |0.958  after 29 epochs | color, **fc**| c(6,5,relu, v), c(16, 5, relu, v), F, d(128, leakyRelu, 0.5),  d(84, sigmoid) |
+Note: **bolded** parameters are the ones that changed from previous try.</br>
+
 
 Conclution: </br>
 * Data preprocessing to keep all channels provides more information to learn than gray scale, as shown in experiment 0 and 1. </br>
@@ -94,7 +94,6 @@ Keras data generator was used for easier augmentation on images. </br>
 ```
                            
 Following are explaintion on the shorthand notations I used in the table above:</br>
-**bolded** : parameters that changed from previous try.</br>
 Validation Accuracy: If epochs is not written, it's the accuracy on the validation set after 30 epochs </br>
 Image augmentation notation:</br>
 r: rotation_range </br>
@@ -117,7 +116,7 @@ Things not changed during parameter tuning: </br>
 Final output layer is a fully connected layer with number of classes nodes, 
 and softmax activation to output probability distribution.
 
-# Design and Test a Model Architecture
+## Design and Test a Model Architecture
 Preprocessing involves rotation, shift, scaling and horizontal_flip. 
 This is implemented using `ImageDataGenerator` in Keras, as shown in `data_augment function` in `utils.py`.
 
@@ -129,16 +128,21 @@ During traning, batch size is 128 was used, number of epochs was 20 with early s
 Thus training stops when validation loss is not improved for certain number of epochs, which is 5 here. 
 Only best model is saved, since without save_best_only, model 5 epochs after the best will be saved. <br/>
 
-# Visualization
+Training accuracy was 0.9813, and validation accuracy was 0.956 after 20 epochs. <br/>
+## Visualization
 Images before and after augmentation are generated for training and testing
 images to make sure image formats are correct. <br/>
 
-# Test a Model on New Images
+## Test a Model 
+### Test on German Traffic Sign testing dataset
+Testing accuracy was 0.939. <br/>
+
+### Test on 5 images from internet
 Top 5 softmax probabilities for prediction on each image is generated, and the 
 class with highest probability was selected to calculate accuracy. <br/>
 Higher softmax probability for a class indicates higher confidence of the model on the prediction. 
 
-# Overall impolementation
+## Overall impolementation
 step0: define hyper parameters, learning rate = 0.01  <br/>
 step1: call prepareDataPipeline to get preprocessed data.  <br/>
 step2: call run-training on training dataset, and printout accuracy on validation dataset  <br/>

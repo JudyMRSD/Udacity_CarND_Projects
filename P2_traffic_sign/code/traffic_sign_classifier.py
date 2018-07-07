@@ -8,13 +8,11 @@ import cv2
 import numpy as np
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
-
 NumEpochs = 20 # train for 20 epochs
 Patience = 5 # early stop training if evaluation performance is not increasing after 5 epochs
 
 class Pipeline():
     def __init__(self, data_dir, visualize_dir, train_model_path='.', test_model_path='.'):
-        # img_params = img.shape()
         self.data_dir = data_dir
         self.visualize_dir = visualize_dir
         self.train_model_path = train_model_path
@@ -56,6 +54,7 @@ class Pipeline():
         self.trainMonitTool.visualizeTrain(self.visualize_dir, history)
 
     def test(self, test_data_dir, test_labels):
+
         files = sorted(glob.glob(test_data_dir+'*.jpg'))
         test_imgs = []
         for f in files:
@@ -80,6 +79,17 @@ class Pipeline():
         # generate top 5 probabilities
         self.dataTool.top_k(pred_prob, test_labels, k=5)
 
+    def test_dataset(self):
+        one_hot_y_test = np_utils.to_categorical(self.dataTool.y_test, self.num_classes)  # One-hot encode the labels
+        test_generator = self.dataTool.data_generator.flow(self.dataTool.X_test, one_hot_y_test,
+                                                            batch_size=self.batch_size)
+
+        test_model = load_model(self.test_model_path)
+        result = test_model.evaluate_generator(test_generator)
+        print("evaluated using the following metric: ", test_model.metrics_names)
+        print("test loss: {}, test accuracy: {}".format(result[0], result[1]))
+
+
 
 def main():
     data_dir = "../data/"
@@ -90,12 +100,16 @@ def main():
     traffic_sign_pipeline = Pipeline(data_dir, visualize_dir, train_model_path= model_path, test_model_path= model_path)
     print("Step 1: Dataset Summary & Exploration")
     traffic_sign_pipeline.load_explore_dataset()
-    # print("Step 2: Build network")
-    # traffic_sign_pipeline.buildNetwork()
-    # print("Step 3: Train network")
-    # traffic_sign_pipeline.train(numEpochs=NumEpochs)
+    print("Step 2: Build network")
+    traffic_sign_pipeline.buildNetwork()
+    print("Step 3: Train network")
+    traffic_sign_pipeline.train(numEpochs=NumEpochs)
     print("Step 4: Test on new testing images from outside the dataset")
     traffic_sign_pipeline.test(test_data_dir, test_labels)
+    print("Step 5: Test on German Traffic Sign testing dataset")
+
+    traffic_sign_pipeline.test_dataset()
+
 
 if __name__ == '__main__':
     main()

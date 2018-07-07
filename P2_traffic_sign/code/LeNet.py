@@ -10,7 +10,6 @@ from keras.layers import Dense, Dropout, Activation
 import keras
 
 class LeNet():
-    # convlayer_filters, convlayer_kernel_size, padding, activation as input to make parameter tuning easier
     def __init__(self, num_classes, img_params):
         self.img_width, self.img_height, self.img_channels = img_params
         self.num_classes = num_classes
