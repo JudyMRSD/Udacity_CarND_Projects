@@ -26,7 +26,7 @@ Vis = True # visualize output for debugging
 Batch_size = 25  # 50 in the example
 Num_Val_Samples = 1000 # param from example
 Num_Train_Samples = 32000  # param from example
-Model_Name = ModelDir+'july5_model.h5'
+Model_Name = ModelDir+'july8_model.h5'
 class Pipeline():
     def __init__(self):
         print("init")
@@ -41,8 +41,8 @@ class Pipeline():
             self.dataUtil.train_val_generator(csv_path = Driving_Log_Path, image_dir=Img_Data_Dir,
                                               debug_dir = Debug_Dir, batch_size=Batch_size)
 
-        if Vis:
-            self.visUtil.vis_generator(train_generator, "remove_small_angles", save_dir=Debug_Dir)
+        # if Vis:
+        #     self.visUtil.vis_generator(train_generator, "remove_small_angles", save_dir=Debug_Dir)
 
         print("build model")
         model = self.modelUtil.create_network(Top_Crop, Bottom_Crop, Input_Shape)

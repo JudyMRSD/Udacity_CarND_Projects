@@ -31,7 +31,7 @@ from keras.models import Sequential
 
 
 NumSamples = -1  # 32 # -1  use all samples
-Vis = False # visualize output for debugging
+Vis = True # visualize output for debugging
 
 class ModelUtil():
     # input : RGB image, output: steering angle
@@ -190,8 +190,17 @@ class DataUtil():
                     sample_images, sample_angles = self.sample_img_ang(batch_sample, is_train)
                     images.extend(sample_images)
                     angles.extend(sample_angles)
-                X_train = np.array(images)
-                y_train = np.array(angles)
+                angles = np.array(angles)
+                zero_thresh = 0.01
+                zero_angle_index = angles < zero_thresh
+                zero_angle_index[25:] = False # since samples are already shuffled, only take first 25% of zero_angles
+                non_zero_angle_index = angles > zero_thresh
+                selected_index = zero_angle_index | non_zero_angle_index # take valid zero angle and non zero angle
+                print("selected_index.shape", selected_index.shape)
+                X_train = np.array(images)[selected_index]
+                print("X_train.shape",X_train.shape)
+                y_train = np.array(angles)[selected_index]
+                print("y_train.shape", y_train.shape)
                 yield sklearn.utils.shuffle(X_train, y_train)
 
     def train_val_generator(self, csv_path,image_dir, debug_dir, batch_size):
@@ -205,6 +214,7 @@ class DataUtil():
             for line in reader:
                 samples.append(line)
         samples=samples[0:NumSamples]
+
         if Vis:
             aug_imgs, aug_angles = self.sample_img_ang(samples[10], is_train=True)
             self.visUtil.vis_img_aug(aug_imgs, aug_angles, self.debug_dir)
@@ -229,7 +239,7 @@ class DataUtil():
 class VisualizeUtil():
     def __init__(self):
         pass
-    def vis_generator(self, generator, name, save_dir):
+    def draw_line(self, generator, name, save_dir):
         images, angles = generator.__next__()
         plt.hist(angles, bins='auto')
         plt.title(name)
