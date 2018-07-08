@@ -196,11 +196,11 @@ class DataUtil():
                 zero_angle_index[25:] = False # since samples are already shuffled, only take first 25% of zero_angles
                 non_zero_angle_index = angles > zero_thresh
                 selected_index = zero_angle_index | non_zero_angle_index # take valid zero angle and non zero angle
-                print("selected_index.shape", selected_index.shape)
+                # print("selected_index.shape", selected_index.shape)
                 X_train = np.array(images)[selected_index]
-                print("X_train.shape",X_train.shape)
+                # print("X_train.shape",X_train.shape)
                 y_train = np.array(angles)[selected_index]
-                print("y_train.shape", y_train.shape)
+                # print("y_train.shape", y_train.shape)
                 yield sklearn.utils.shuffle(X_train, y_train)
 
     def train_val_generator(self, csv_path,image_dir, debug_dir, batch_size):
