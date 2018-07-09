@@ -27,9 +27,10 @@ from keras.layers.pooling import MaxPooling2D
 from keras.layers.core import Dropout, Dense, Activation
 from keras.optimizers import SGD, Adam
 from keras.models import Sequential
+import random
 
 
-
+Light_Aug = False
 NumSamples = -1  # 32 # -1  use all samples
 Vis = True # visualize output for debugging
 Angle_Thresh = 0.01 # angles less than Angle_Thresh will be kept with Keep_Zero_Prob
@@ -94,36 +95,37 @@ class DataUtil():
             col_idx = [self.center_col_idx, self.left_col_idx, self.right_col_idx]
             angle_adjust = [0,  self.angle_correction, -self.angle_correction]
             angle = float(batch_sample[self.center_angle_col_idx])
-
-            # 0.25 chance to keep angle < 0
-            if ((abs(angle) > Angle_Thresh) or (np.random.rand() < Keep_Zero_Prob)):
-                for i in col_idx:
-                    bgr_image = cv2.imread(self.image_dir + batch_sample[i].split('/')[-1])
-                    rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)  # convert color to RGB to match drive.py
-                    adj_ang = angle+angle_adjust[i]
-                    # data augmentation: flipping half of the images
-                    flipped_img, flipped_ang = self.aug_flip(rgb_image, adj_ang)
+            for i in col_idx:
+                bgr_image = cv2.imread(self.image_dir + batch_sample[i].split('/')[-1])
+                # resize to half width and height
+                # idea from:  https://medium.com/@ValipourMojtaba/my-approach-for-project-3-2545578a9319
+                bgr_image = cv2.resize(bgr_image, (0, 0), fx=0.5, fy=0.5)
+                rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)  # convert color to RGB to match drive.py
+                adj_ang = angle+angle_adjust[i]
+                # data augmentation: flipping half of the images
+                flipped_img, flipped_ang = self.aug_flip(rgb_image, adj_ang)
+                if Light_Aug:
                     light_img, light_ang = self.aug_light(flipped_img, flipped_ang)
                     shifted_imgs, shifted_angs = self.aug_shift(flipped_img, flipped_ang)
-                    # shifted_imgs, shifted_angs = self.aug_shift_1(rgb_image, adj_ang)
-
-                    # save img and angle
-                    # images.extend([rgb_image, flipped_img])
-                    # angles.extend([adj_ang, flipped_ang])
                     images.extend([rgb_image, flipped_img, light_img])
                     angles.extend([adj_ang, flipped_ang, light_ang])
-
-                    # images.extend([rgb_image, flipped_img])
-                    # angles.extend([adj_ang, flipped_ang])
-                    # images.append(light_img)
-                    # angles.append(light_ang)
                     images.extend(shifted_imgs)
                     angles.extend(shifted_angs)
+                else:
+                    shifted_imgs, shifted_angs = self.aug_shift(flipped_img, flipped_ang)
+                    images.extend([rgb_image, flipped_img])
+                    angles.extend([adj_ang, flipped_ang])
+
+                images.extend(shifted_imgs)
+                angles.extend(shifted_angs)
 
         # no data agumentation on validation set
         else:
             center_img_name = self.image_dir + batch_sample[self.center_col_idx].split('/')[-1]
             bgr_image = cv2.imread(center_img_name)
+
+            bgr_image = cv2.resize(bgr_image, (0,0), fx=0.5, fy=0.5)
+
             angle = float(batch_sample[self.center_angle_col_idx])
             images.append(bgr_image)
             angles.append(angle)
@@ -148,13 +150,13 @@ class DataUtil():
         for i in range (self.num_shift):
             # my code
             img_h, img_w, _ = image.shape
-            x_shift_range = 200 #100
+            x_shift_range = 100 # 200
             # np.random.rand() - 0.5  random number (0, 1) -> (-0.5 , 0.5)
             trans_x = x_shift_range * (np.random.rand() - 0.5)
-            y_shift_range = 20 #10
+            y_shift_range = 10 # 20
             trans_y = y_shift_range * (np.random.rand() - 0.5)
             # for every pixel shift in x direction, change angle by angle_per_pix
-            angle_per_pix = 0.4 #0.8
+            angle_per_pix = 0.8 # 0.4
             shifted_ang = angle + trans_x/x_shift_range * angle_per_pix
             affine_matrix = np.array([[1, 0 , trans_x],
                                       [0, 1, trans_y]], dtype = np.float32)
@@ -219,8 +221,19 @@ class DataUtil():
                 samples.append(line)
         samples=samples[0:NumSamples]
 
+        # only keep 0.25 of zero angles
+        np_sample = np.array(samples)
+        angle_column = np.array(np_sample[:, self.center_angle_col_idx], dtype= float)
+        non_zero_angles_index = np.absolute(angle_column) > Angle_Thresh
+        zero_angles = np.absolute(angle_column) < Angle_Thresh
+        zeros_prob_angle = np.random.random_sample((len(zero_angles),)) < Keep_Zero_Prob
+        zero_angles_index = np.logical_and(zeros_prob_angle , zero_angles)
+
+        valid_sample_idx = np.logical_or(zero_angles_index, non_zero_angles_index)
+        filtered_samples = np_sample[valid_sample_idx, :]
+
         if Vis:
-            aug_imgs, aug_angles = self.sample_img_ang(samples[10], is_train=True)
+            aug_imgs, aug_angles = self.sample_img_ang(filtered_samples[10], is_train=True)
             self.visUtil.vis_img_aug(aug_imgs, aug_angles, self.debug_dir)
 
         train_samples, validation_samples = train_test_split(samples, test_size=0.2)
@@ -296,7 +309,6 @@ class VisualizeUtil():
         ax_row = 2
         ax_col = 2
         fig, self.ax = plt.subplots(ax_row, ax_col, figsize=(16, 9))
-
         self.draw_line(0, 0, "original", images[0], aug_angles[0])
         self.draw_line(0, 1, "flipped", images[1], aug_angles[1])
         self.draw_line(1, 0, "adjust_light", images[2], aug_angles[2])

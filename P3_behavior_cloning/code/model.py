@@ -3,10 +3,11 @@
 
 # crop layer example from Udacity
 # crop 50 rows piexels from top of the image and 20 rows from bottom of the image
-Top_Crop = 60
-Bottom_Crop = 20
+Top_Crop = 30 #60
+Bottom_Crop = 10# 20
 # Input_Shape = (3,160,320)
-Input_Shape = (160,320,3)
+# Input_Shape = (160,320,3)
+Input_Shape = (80,160,3)
 
 from keras.models import Sequential, Model
 from keras.layers import Cropping2D

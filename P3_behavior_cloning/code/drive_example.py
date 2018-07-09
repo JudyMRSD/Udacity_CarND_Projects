@@ -31,7 +31,6 @@ def processFunc(image):
     
     return image
 
-
 class SimplePIController:
     def __init__(self, Kp, Ki):
         self.Kp = Kp
