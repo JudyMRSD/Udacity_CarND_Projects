@@ -32,7 +32,8 @@ from keras.models import Sequential
 
 NumSamples = -1  # 32 # -1  use all samples
 Vis = True # visualize output for debugging
-
+Angle_Thresh = 0.01 # angles less than Angle_Thresh will be kept with Keep_Zero_Prob
+Keep_Zero_Prob = 0.25
 class ModelUtil():
     # input : RGB image, output: steering angle
     def __init__(self):
@@ -94,30 +95,30 @@ class DataUtil():
             angle_adjust = [0,  self.angle_correction, -self.angle_correction]
             angle = float(batch_sample[self.center_angle_col_idx])
 
-            for i in col_idx:
-                bgr_image = cv2.imread(self.image_dir + batch_sample[i].split('/')[-1])
-                rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)  # convert color to RGB to match drive.py
-                adj_ang = angle+angle_adjust[i]
-                # data augmentation: flipping half of the images
-                flipped_img, flipped_ang = self.aug_flip(rgb_image, adj_ang)
-                light_img, light_ang = self.aug_light(flipped_img, flipped_ang)
-                shifted_imgs, shifted_angs = self.aug_shift(flipped_img, flipped_ang)
-                # shifted_imgs, shifted_angs = self.aug_shift_1(rgb_image, adj_ang)
+            # 0.25 chance to keep angle < 0
+            if ((abs(angle) > Angle_Thresh) or (np.random.rand() < Keep_Zero_Prob)):
+                for i in col_idx:
+                    bgr_image = cv2.imread(self.image_dir + batch_sample[i].split('/')[-1])
+                    rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)  # convert color to RGB to match drive.py
+                    adj_ang = angle+angle_adjust[i]
+                    # data augmentation: flipping half of the images
+                    flipped_img, flipped_ang = self.aug_flip(rgb_image, adj_ang)
+                    light_img, light_ang = self.aug_light(flipped_img, flipped_ang)
+                    shifted_imgs, shifted_angs = self.aug_shift(flipped_img, flipped_ang)
+                    # shifted_imgs, shifted_angs = self.aug_shift_1(rgb_image, adj_ang)
 
-                # save img and angle
-                # images.extend([rgb_image, flipped_img])
-                # angles.extend([adj_ang, flipped_ang])
-
-                if (abs(adj_ang) > self.angle_correction): # only keep half of the angles > 0.2
+                    # save img and angle
+                    # images.extend([rgb_image, flipped_img])
+                    # angles.extend([adj_ang, flipped_ang])
                     images.extend([rgb_image, flipped_img, light_img])
                     angles.extend([adj_ang, flipped_ang, light_ang])
 
-                # images.extend([rgb_image, flipped_img])
-                # angles.extend([adj_ang, flipped_ang])
-                # images.append(light_img)
-                # angles.append(light_ang)
-                images.extend(shifted_imgs)
-                angles.extend(shifted_angs)
+                    # images.extend([rgb_image, flipped_img])
+                    # angles.extend([adj_ang, flipped_ang])
+                    # images.append(light_img)
+                    # angles.append(light_ang)
+                    images.extend(shifted_imgs)
+                    angles.extend(shifted_angs)
 
         # no data agumentation on validation set
         else:
@@ -177,6 +178,15 @@ class DataUtil():
         # https: // github.com / jeremy - shannon / CarND - Behavioral - Cloning - Project
         pass
 
+    def less_zero(self, angles):
+        angles = np.array(angles)
+        zero_thresh = 0.01
+        zero_angle_index = angles < zero_thresh
+        zero_angle_index[25:] = False # since samples are already shuffled, only take first 25% of zero_angles
+        non_zero_angle_index = angles > zero_thresh
+        selected_index = zero_angle_index | non_zero_angle_index # take valid zero angle and non zero angle
+        return selected_index
+                
     def generator(self, samples, is_train, batch_size=10): # 10 is parameter from example
         num_samples = len(samples)
         print("num_samples", num_samples)
@@ -190,16 +200,10 @@ class DataUtil():
                     sample_images, sample_angles = self.sample_img_ang(batch_sample, is_train)
                     images.extend(sample_images)
                     angles.extend(sample_angles)
-                angles = np.array(angles)
-                zero_thresh = 0.01
-                zero_angle_index = angles < zero_thresh
-                zero_angle_index[25:] = False # since samples are already shuffled, only take first 25% of zero_angles
-                non_zero_angle_index = angles > zero_thresh
-                selected_index = zero_angle_index | non_zero_angle_index # take valid zero angle and non zero angle
                 # print("selected_index.shape", selected_index.shape)
-                X_train = np.array(images)[selected_index]
+                X_train = np.array(images)
                 # print("X_train.shape",X_train.shape)
-                y_train = np.array(angles)[selected_index]
+                y_train = np.array(angles)
                 # print("y_train.shape", y_train.shape)
                 yield sklearn.utils.shuffle(X_train, y_train)
 
@@ -224,6 +228,7 @@ class DataUtil():
         num_validation_samples = len(validation_samples)
 
         print("create generator")
+        print("batch_size", batch_size)
         train_generator = self.generator(train_samples, is_train = True, batch_size=batch_size)
 
         validation_generator = self.generator(validation_samples,  is_train=False, batch_size=batch_size)
@@ -239,14 +244,22 @@ class DataUtil():
 class VisualizeUtil():
     def __init__(self):
         pass
-    def draw_line(self, generator, name, save_dir):
+
+    def vis_generator(self, generator, name, save_dir):
         images, angles = generator.__next__()
         plt.hist(angles, bins='auto')
         plt.title(name)
         plt.xlabel("angle")
         plt.ylabel("count")
         plt.savefig(save_dir + name + ".png")
-        plt.close()
+        # 4: original, flipped, shifted
+        ax_row = 3
+        ax_col = 1
+        fig, ax = plt.subplots(ax_row, ax_col, figsize=(16, 9))
+        img_vis = images[:ax_row]
+        for i, img in enumerate(img_vis):
+            ax[i].imshow(img)
+        plt.savefig(save_dir + "vis_aug_imgs.jpg")
 
     def draw_line(self, row, col, name, img, angle):
         #steering angle is between -1 and 1
@@ -268,6 +281,7 @@ class VisualizeUtil():
         # endX = x + 40 * Math.sin(angle);
         # endY = y + 40 * Math.cos(angle);
 
+        # keep the line pointing from center of bottom of frame to the middle of image
         # inspired by https://github.com/jeremy-shannon/CarND-Behavioral-Cloning-Project/blob/30e520da0d5a8d17bb1d7596eb8375f153f19468/model.py
         cv2.line(img, (int(w / 2), int(h)), (int(w / 2 + angle * w / 4), int(h / 2)), (0, 255, 0),
                  thickness=4)

@@ -22,7 +22,7 @@ Driving_Log_Path = "../data/driving_log.csv"
 Img_Data_Dir = "../data/IMG/"
 Debug_Dir = "../data/debug/"
 Num_Epochs = 17
-Vis = True # visualize output for debugging
+Vis = False # visualize output for debugging
 Batch_size = 25  # 50 in the example
 Num_Val_Samples = 10 # param from example
 Num_Train_Samples = 3200  # param from example
@@ -41,9 +41,8 @@ class Pipeline():
             self.dataUtil.train_val_generator(csv_path = Driving_Log_Path, image_dir=Img_Data_Dir,
                                               debug_dir = Debug_Dir, batch_size=Batch_size)
 
-        # if Vis:
-        #     self.visUtil.vis_generator(train_generator, "remove_small_angles", save_dir=Debug_Dir)
-
+        if Vis:
+            self.visUtil.vis_generator(train_generator, "remove_small_angles", save_dir=Debug_Dir)
         print("build model")
         model = self.modelUtil.create_network(Top_Crop, Bottom_Crop, Input_Shape)
         # TODO: add callbacks
