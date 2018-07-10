@@ -26,8 +26,8 @@ Num_Epochs = 17
 Vis = False # visualize output for debugging
 Batch_size = 25  # 50 in the example
 Num_Val_Samples = 10 # param from example
-Num_Train_Samples = 3200  # param from example
-Model_Name = ModelDir+'july8_model.h5'
+Num_Train_Samples = 32000 # param from example
+Model_Name = ModelDir+'july9_model.h5'
 class Pipeline():
     def __init__(self):
         print("init")
