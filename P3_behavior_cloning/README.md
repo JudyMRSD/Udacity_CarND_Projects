@@ -1,3 +1,13 @@
+# Overview
+The objective of this project is to apply behavioral cloning to teach a car
+to drive in simulation autonomously. 
+The neural network will only use visual input and output a steering angle 
+to an autonomous vehicle.
+Training data was provided for track 1 
+(training track) and not provided for track 2 (testing track). 
+Result showed that the model can both work on training track
+and the testing track. 
+
 # Files
 ```
 project
