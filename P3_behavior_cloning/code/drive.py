@@ -1,4 +1,6 @@
-# Provided by Udacity
+# Provided by Udacity, modified based on medium post:
+# https://medium.com/@ValipourMojtaba/my-approach-for-project-3-2545578a9319
+# to accept downsampled images
 import argparse
 import base64
 from datetime import datetime
@@ -22,12 +24,14 @@ sio = socketio.Server()
 app = Flask(__name__)
 model = None
 prev_image_array = None
-# def processFunc(image):
-    
-#     image = image[60:-20,:,:]
-#     image = cv2.resize(image,(0,0),fx=0.5,fy=0.5)
-    
-#     return image
+
+
+def processFunc(image):
+    # image = image[60:-20,:,:]  # (80, 320, 3), example code
+    image = cv2.resize(image, (0, 0), fx=0.5, fy=0.5)  # (40, 160, 3)
+
+    return image
+
 
 class SimplePIController:
     def __init__(self, Kp, Ki):
@@ -68,7 +72,7 @@ def telemetry(sid, data):
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image_array = np.asarray(image)
-        # image_array = processFunc(image_array)
+        image_array = processFunc(image_array)
 
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
 

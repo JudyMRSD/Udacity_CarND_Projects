@@ -1,40 +1,23 @@
-#
-# visualize data: distribution of steering angles
-import cv2
-import os
-from keras.models import Sequential
-from keras.layers import Conv2D
-from keras.layers.convolutional import MaxPooling2D
-from keras.layers.core import Activation
-from keras.layers.core import Flatten
-from keras.layers.core import Dense
-import numpy as np
 import sklearn
 import csv
 from sklearn.model_selection import train_test_split
 
-from keras.models import Sequential, Model
 from keras.layers import Cropping2D
-from keras.layers import Lambda, Flatten, Dense
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 
-from keras.utils import np_utils
 from keras.layers import Conv2D, Flatten, Lambda
 from keras.layers.pooling import MaxPooling2D
-from keras.layers.core import Dropout, Dense, Activation
-from keras.optimizers import SGD, Adam
+from keras.layers.core import Dropout, Dense
 from keras.models import Sequential
-import random
 
-
-Light_Aug = False
-NumSamples = -1  # 32 # -1  use all samples
+NumSamples = -1  # -1  use all samples, 32 to debug
 Vis = True # visualize output for debugging
 Angle_Thresh = 0.01 # angles less than Angle_Thresh will be kept with Keep_Zero_Prob
 Keep_Zero_Prob = 0.25
+
 class ModelUtil():
     # input : RGB image, output: steering angle
     def __init__(self):
@@ -55,12 +38,12 @@ class ModelUtil():
 
     def create_network(self, top_crop, bottom_crop, input_shape):
 
-        # started with the architecture here, but I wrote the code myself
+        # started with the architecture here, but I implemented the code myself
         # https://github.com/mvpcom/Udacity-CarND-Project-3/blob/master/model.ipynb
         self.model = Sequential()
-        # preprocess layers
-        # ((top_crop, bottom_crop), (left_crop, right_crop))
+        # preprocess layers to get region of interest ((top_crop, bottom_crop), (left_crop, right_crop))
         self.model.add(Cropping2D(cropping=((top_crop, bottom_crop), (0, 0)), input_shape=input_shape))
+        # normalize input
         self.model.add(Lambda(lambda x: (x / 255.0) - 0.5))
         # conv layers
         self.model.add(Conv2D(3, 1, 1,activation ='elu', name='conv_1'))
@@ -71,12 +54,9 @@ class ModelUtil():
         self.build_dense_layers(units_list=[256, 128, 64, 8])
         self.model.add(Dense(1, activation = 'elu', name='output_angle'))
 
-        self.model.summary()
         self.model.compile(loss='mse', optimizer='adam')
         self.model.summary()
         return self.model
-
-
 
 class DataUtil():
     def __init__(self):
@@ -86,7 +66,9 @@ class DataUtil():
         self.center_angle_col_idx = 3
         self.angle_correction = 0.2
         self.visUtil = VisualizeUtil()
-
+    # for each set of center, left and right images, adjust center angle for left and right image
+    # each of the 3 images are flipped to balance left and right turns
+    # shift is applied to simulate cars at different locations in the lane
     def sample_img_ang(self, batch_sample, is_train):
         # use center, left and right images by making adjustment ot turning angle
         images = []
@@ -102,23 +84,15 @@ class DataUtil():
                 bgr_image = cv2.resize(bgr_image, (0, 0), fx=0.5, fy=0.5)
                 rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)  # convert color to RGB to match drive.py
                 adj_ang = angle+angle_adjust[i]
-                # data augmentation: flipping half of the images
+                # data augmentation
                 flipped_img, flipped_ang = self.aug_flip(rgb_image, adj_ang)
-                if Light_Aug:
-                    light_img, light_ang = self.aug_light(flipped_img, flipped_ang)
-                    shifted_imgs, shifted_angs = self.aug_shift(flipped_img, flipped_ang)
-                    images.extend([rgb_image, flipped_img, light_img])
-                    angles.extend([adj_ang, flipped_ang, light_ang])
-                    images.extend(shifted_imgs)
-                    angles.extend(shifted_angs)
-                else:
-                    shifted_imgs, shifted_angs = self.aug_shift(flipped_img, flipped_ang)
-                    images.extend([rgb_image, flipped_img])
-                    angles.extend([adj_ang, flipped_ang])
+
+                shifted_imgs, shifted_angs = self.aug_shift(flipped_img, flipped_ang)
+                images.extend([rgb_image, flipped_img])
+                angles.extend([adj_ang, flipped_ang])
 
                 images.extend(shifted_imgs)
                 angles.extend(shifted_angs)
-
         # no data agumentation on validation set
         else:
             center_img_name = self.image_dir + batch_sample[self.center_col_idx].split('/')[-1]
@@ -133,25 +107,20 @@ class DataUtil():
         return images, angles
 
     def aug_flip(self, img, angle):
-        if np.random.rand()>0:
-            # (left turn -> right turn)
-            img = cv2.flip(img, 1)
-            angle = -angle
+        # (left turn -> right turn)
+        img = cv2.flip(img, 1)
+        angle = -angle
         return img, angle
 
 
     def aug_shift(self, image, angle):
-        # took from https://medium.com/@ValipourMojtaba/my-approach-for-project-3-2545578a9319
-        # including hyper parameters
-
+        # idea from https://medium.com/@ValipourMojtaba/my-approach-for-project-3-2545578a9319
         shifted_images = []
         shifted_angles = []
-        # in example, image is downsampled 1/2 size, so here need to adjust params
         for i in range (self.num_shift):
             # my code
             img_h, img_w, _ = image.shape
             x_shift_range = 100 # 200
-            # np.random.rand() - 0.5  random number (0, 1) -> (-0.5 , 0.5)
             trans_x = x_shift_range * (np.random.rand() - 0.5)
             y_shift_range = 10 # 20
             trans_y = y_shift_range * (np.random.rand() - 0.5)
@@ -176,10 +145,6 @@ class DataUtil():
         # angle not changed, directly returned
         return aug_light_img, angle
 
-    def aug_shadow(self):
-        # https: // github.com / jeremy - shannon / CarND - Behavioral - Cloning - Project
-        pass
-
     def less_zero(self, angles):
         angles = np.array(angles)
         zero_thresh = 0.01
@@ -189,7 +154,7 @@ class DataUtil():
         selected_index = zero_angle_index | non_zero_angle_index # take valid zero angle and non zero angle
         return selected_index
                 
-    def generator(self, samples, is_train, batch_size=10): # 10 is parameter from example
+    def generator(self, samples, is_train, batch_size=10):
         num_samples = len(samples)
         print("num_samples", num_samples)
         while 1:  # Loop forever so the generator never terminates
@@ -202,11 +167,8 @@ class DataUtil():
                     sample_images, sample_angles = self.sample_img_ang(batch_sample, is_train)
                     images.extend(sample_images)
                     angles.extend(sample_angles)
-                # print("selected_index.shape", selected_index.shape)
                 X_train = np.array(images)
-                # print("X_train.shape",X_train.shape)
                 y_train = np.array(angles)
-                # print("y_train.shape", y_train.shape)
                 yield sklearn.utils.shuffle(X_train, y_train)
 
     def train_val_generator(self, csv_path,image_dir, debug_dir, batch_size):
@@ -248,11 +210,6 @@ class DataUtil():
 
         return  num_train_samples, num_validation_samples, train_generator, validation_generator
 
-    """
-    If the above code throw exceptions, try
-    model.fit_generator(train_generator, steps_per_epoch= len(train_samples),
-    validation_data=validation_generator, validation_steps=len(validation_samples), epochs=5, verbose = 1)
-    """
 
 class VisualizeUtil():
     def __init__(self):
@@ -275,37 +232,21 @@ class VisualizeUtil():
         plt.savefig(save_dir + "vis_aug_imgs.jpg")
 
     def draw_line(self, row, col, name, img, angle):
-        #steering angle is between -1 and 1
+        # steering angle is between -1 and 1
         # convert -1 to 1  to angles  (angle + 1)/2 ---- [0,1]
         # turn left: +    turn right: -
-        #  angle_degrees = (angle+1)/2 * 360
         self.ax[row][col].set_title(name+",  angle "+ "{0:.2f}".format(round(angle,2)))
-
         h, w, _ = img.shape
-        # todo: angle to line
-
-        # x0 = int(w / 2)
-        # y0 = int(h)
-        # x1 =
-        # y1 = int(h) +
-
-        # startX = x;
-        # startY = y;
-        # endX = x + 40 * Math.sin(angle);
-        # endY = y + 40 * Math.cos(angle);
-
-        # keep the line pointing from center of bottom of frame to the middle of image
-        # inspired by https://github.com/jeremy-shannon/CarND-Behavioral-Cloning-Project/blob/30e520da0d5a8d17bb1d7596eb8375f153f19468/model.py
+        # keep the line pointing from center of bottom of frame to the middle of image, inspired by jeremy-shannon
         cv2.line(img, (int(w / 2), int(h)), (int(w / 2 + angle * w / 4), int(h / 2)), (0, 255, 0),
                  thickness=4)
 
         self.ax[row][col].imshow(img)
 
-    def vis_img_aug(self, aug_imgs, aug_angles, save_dir):    # todo: plot a line indicating angle on the image
+    def vis_img_aug(self, aug_imgs, aug_angles, save_dir):
         print("aug_imgs", len(aug_imgs))
         images = aug_imgs[0:4]
 
-        # 4: original, flipped, shifted, adjust light
         ax_row = 2
         ax_col = 2
         fig, self.ax = plt.subplots(ax_row, ax_col, figsize=(16, 9))
