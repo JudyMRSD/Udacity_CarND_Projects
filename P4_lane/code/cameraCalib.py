@@ -1,15 +1,11 @@
 # Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
 
-# code adapted from Udacity oneline course
+# code is modified based on examples from Udacity oneline course
 # https://github.com/udacity/CarND-Camera-Calibration/blob/master/camera_calibration.ipynb
-
-
 import pickle
 import numpy as np
 import cv2
 import glob
-import matplotlib.pyplot as plt
-
 
 class CameraCalibration:
     def __init__(self):
@@ -18,7 +14,7 @@ class CameraCalibration:
         self.imgpoints = []  # 2d points in image plane.
 
     # corner_rows  # number of corners (not count ones on chessboard boarder
-    def find_corners(self,chessboard_in_paths, chessboard_out_paths, corner_rows, corner_cols):
+    def find_corners(self, chessboard_in_paths, chessboard_out_paths, corner_rows, corner_cols):
         image_paths = glob.glob(chessboard_in_paths)
         # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         objp = np.zeros((corner_cols* corner_rows,3), np.float32)
