@@ -26,7 +26,7 @@ Chessboard_Output_Test = Data_Dir+'output_images/undistort/calibration2_undist.j
 Car_Input_Test = Data_Dir+'test_images/test2.jpg'
 Car_Output_Test = Data_Dir+'output_images/undistort/calibration2_undistort.jpg'
 # Output directory to save thresholded images
-outdir = Data_Dir+'output_images/thresh_out/'
+outdir = Data_Dir+'pipeline_out/'
 input_img_path = Data_Dir+'test_images/test5.jpg'
 # Points needed to warp images to bird eye view, these are hand selected points
 # that can calculate a mapping that doesn't change as long as the intrinsics and
@@ -60,11 +60,11 @@ class Pipeline:
         # Step 2: Apply a distortion correction to raw images.
         undistort_front = cv2.undistort(input_img, self.camera_matrix, self.distorsion_coefficient, None, self.camera_matrix)
         if (out_dir):
+            print("write", outdir+"undistort_front.jpg")
+
             cv2.imwrite(outdir+"undistort_front.jpg",undistort_front)
         # Step 3: Use color transforms, gradients, etc., to create a thresholded binary image
         binary_front_img = self.threshTool.visualize(undistort_front, outdir)
-
-
         if (idx==1):
             # Step 4: Apply a perspective transform to rectify binary image ("birds-eye view").
             # to_bird_matrix, to_front_matrix only need to be calculated on the first frame

@@ -24,6 +24,7 @@ class Perspective():
         cv2.imwrite(out_dir+"birdeye.jpg", birdeye_img)
         if out_dir:
             front_pts = src.reshape(-1, 1, 2).astype(int)
+            print("front_pts", front_pts)
             front_lines = cv2.polylines(front_img, [front_pts], color=(0, 255, 0), thickness=5, isClosed=True)
             cv2.imwrite(out_dir+ "lines_front.jpg", front_lines)
             birdeye_pts = dst.reshape(-1, 1, 2).astype(int)

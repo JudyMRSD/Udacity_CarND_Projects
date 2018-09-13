@@ -138,14 +138,20 @@ class Boundary():
 
     @staticmethod
     def polynomial_to_points(x, y, margin):
-        left_vertices = np.array([np.transpose(np.vstack([x - margin, y]))]).astype(int)
+        left_vertices = np.array([np.transpose(np.vstack([y, x - margin]))], dtype = np.int32)
+        print("left_vertices", left_vertices.shape)
         # flip the points on the right edge of the left traffic lane, so the points are ordered for fillPoly
         # 1              6
         # 2              5
         # 3              4
         # window    window 2
-        right_vertices = np.array([np.flipud(np.transpose(np.vstack([x + margin, y])))]).astype(int)
-        pts = np.hstack((left_vertices, right_vertices)).astype(int)
+        right_vertices = np.array([np.flipud(np.transpose(np.vstack([y, x + margin])))], dtype = np.int32)
+        pts = np.hstack((left_vertices, right_vertices))
+
+        vertices = np.array([[(0, 100), (450, 315), (480, 315), (500, 100)]], dtype=np.int32)
+        print("vertices", vertices.shape)
+        print("pts", pts.shape)
+        print(vertices)
         return pts,left_vertices, right_vertices
 
 
@@ -180,8 +186,10 @@ class Boundary():
         pts, left_vertices, right_vertices = self.polynomial_to_points(self.left_fitx, self.right_fitx, self.margin)
         # draw lane boundaries on the warped imagely
         # todo: color_birdeye_mask is still zeros after fillPoly
+        print("pts", pts)
+        vertices = np.array([[(0, 100), (450, 315), (480, 315), (500, 100)]], dtype=np.int32)
         cv2.fillPoly(color_birdeye_mask, [pts], (0,255,0))
-        cv2.polylines(color_birdeye_mask, [left_vertices], isClosed = False, color =  (255, 0,0), thickness = 10)
+        cv2.polylines(color_birdeye_mask,[left_vertices], isClosed = False, color =  (255, 0,0), thickness = 10)
         cv2.polylines(color_birdeye_mask, [right_vertices], isClosed = False, color =  (0, 0, 255), thickness = 10)
         # Idea taken from https://github.com/jeremy-shannon/CarND-Advanced-Lane-Lines/blob/master/project.ipynb
         # warp the mask back to original image (fornt view)
@@ -191,14 +199,21 @@ class Boundary():
         blend_beta = 1- blend_alpha
         result_img = cv2.addWeighted(color_front_mask, blend_alpha, original_img, blend_beta, 0.0, img_blend)
 
+        # calculate curvature and center dist
         left_curverad, right_curverad = self.calc_curvature()
         center_dist = self.calc_dist_center()
 
-        text = "Left curvature = {0:.3f} m \n Right curvature = {0:.3f} m \n Distance to center = center_dist \n"\
-            .format(left_curverad, right_curverad, center_dist)
+        # put text on image
+        curv_left_text =  "Left  lane curvature = {0:.2f} rad".format(left_curverad)
+        curv_right_text = "Right lane curvature = {0:.2f} rad".format(left_curverad)
+        center_dist_text ="Distance to center = {0:.2f} m".format(center_dist)
 
-        cv2.putText(result_img, text, (40, 120), cv2.FONT_HERSHEY_DUPLEX, 1.5, (200, 255, 155), 2, cv2.LINE_AA)
+        cv2.putText(result_img, curv_left_text, (10, 50), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(result_img, curv_right_text, (10, 100), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(result_img, center_dist_text, (10, 150), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
         if(outdir):
+            cv2.imwrite(outdir + "lane_border.jpg", color_front_mask)
             cv2.imwrite(outdir + "blend.jpg", result_img)
 
         return result_img
