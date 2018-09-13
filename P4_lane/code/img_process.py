@@ -66,20 +66,18 @@ class Image_Process:
         self.color_binary= self.color_binary.astype(np.uint8)
 
 
-
     def combine_thresh(self):
         # Combine the all the binary thresholds
         self.combined_binary = np.zeros_like(self.sxbinary)
         self.combined_binary[(self.s_binary == 1) & (self.l_binary == 1) | (self.sxbinary == 1)] = 1
 
         kernel = np.ones((5, 5), np.uint8)
-        self.closing = cv2.morphologyEx(self.combined_binary.astype(np.uint8), cv2.MORPH_CLOSE, kernel)
+        closing = cv2.morphologyEx(self.combined_binary.astype(np.uint8), cv2.MORPH_CLOSE, kernel)
 
+        return closing
 
-    def visualize(self, img, outdir=None, base=None):
+    def visualize(self, img, outdir=None):
         self.img = img
-        print("visualize")
-
         # Plotting thresholded images
         f, ax = plt.subplots(2, 3, figsize=(20, 10))
         plt.tight_layout()
@@ -97,29 +95,30 @@ class Image_Process:
         ax[1][0].set_title('stacked channels')  # remove effects from shadow
         ax[1][0].imshow(self.color_binary, cmap='gray')
 
-        self.combine_thresh()
+        closing = self.combine_thresh()
         ax[1][1].set_title('combined binary')  # remove effects from shadow
         ax[1][1].imshow(self.combined_binary)
         ax[1][2].set_title('after closing')  # remove effects from shadow
-        self.closing *= 255
-        ax[1][2].imshow(self.closing, cmap='gray')
+        closing *= 255
+        ax[1][2].imshow(closing, cmap='gray')
 
         # plt.show()
         # cv2.imshow("self.closing", self.closing*255)
         # cv2.waitKey(0)
-        if (outdir is not None) and (base is not None):
-            plt.savefig(outdir + base + "channels.jpg")
+        if (outdir is not None):
+            plt.savefig(outdir + "first_frame_channels.jpg")
+
+        return closing
 
 def main():
+    # main function for unit test of img_process.py
     print("main")
     outdir = '../output_images/thresh_out/'
     input_img_path='../test_images/test5.jpg'
-    image = mpimg.imread(input_img_path)
-    base = os.path.basename(input_img_path)
-    base = os.path.splitext(base)[0]
+
 
     pipeline = Image_Process()
-    pipeline.visualize(image, outdir, base)
+    pipeline.visualize(input_img_path)
 
 if __name__ == "__main__":
     main()

@@ -27,7 +27,7 @@ class Boundary():
         print(histogram.shape[0],midpoint,self.leftx_base, self.rightx_base)
         plt.close()
 
-    def slid_window(self):
+    def slide_window(self):
         self.img_h, self.img_w = self.img.shape[0:2]
         # Choose the number of sliding windows
         nwindows = 9
@@ -100,23 +100,12 @@ class Boundary():
         # see writeup images
         self.left_fit = np.polyfit(self.lefty, self.leftx, 2)
         self.right_fit = np.polyfit(self.righty, self.rightx, 2)
-
-
-    def visualize(self, outdir):
         # Generate x and y values for plotting
-        self.ploty = np.linspace(0, self.img_h - 1, self.img_h)
+        self.ploty = np.linspace(0, self.img.shape[0] - 1, self.img.shape[0])
+
         self.left_fitx = self.left_fit[0] * self.ploty ** 2 + self.left_fit[1] * self.ploty + self.left_fit[2]
         self.right_fitx = self.right_fit[0] * self.ploty ** 2 + self.right_fit[1] * self.ploty + self.right_fit[2]
-        # replace pixels on the lane by blue and red color pixels
-        self.out_img[self.nonzeroy[self.left_lane_inds], self.nonzerox[self.left_lane_inds]] = [255, 0, 0]
-        self.out_img[self.nonzeroy[self.right_lane_inds], self.nonzerox[self.right_lane_inds]] = [0, 0, 255]
-        plt.imshow(self.out_img)
-        plt.plot(self.left_fitx, self.ploty, color='yellow')
-        plt.plot(self.right_fitx, self.ploty, color='yellow')
-        plt.xlim(0, 1280)
-        plt.ylim(720, 0)
-        plt.savefig(outdir + "slidingwindow.jpg")
-        plt.close()
+        self.margin = 100
 
     def fit_use_prev(self, binary_warped):
         # Assume you now have a new warped binary image
@@ -146,6 +135,7 @@ class Boundary():
         self.left_fitx = self.left_fit[0] * self.ploty ** 2 + self.left_fit[1] * self.ploty + self.left_fit[2]
         self.right_fitx = self.right_fit[0] * self.ploty ** 2 + self.right_fit[1] * self.ploty + self.right_fit[2]
 
+
     @staticmethod
     def polynomial_to_points(x, y, margin):
         left_vertices = np.array([np.transpose(np.vstack([x - margin, y]))]).astype(int)
@@ -159,31 +149,8 @@ class Boundary():
         return pts,left_vertices, right_vertices
 
 
-
-    def visualize_fit_prev(self, outdir):
-        print("visualize fit prev")
-        window_img = np.zeros_like(self.out_img)
-        # Color in left and right line pixels
-        self.out_img[self.nonzeroy[self.left_lane_inds], self.nonzerox[self.left_lane_inds]] = [255, 0, 0]
-        self.out_img[self.nonzeroy[self.right_lane_inds], self.nonzerox[self.right_lane_inds]] = [0, 0, 255]
-
-        # Generate a polygon to illustrate the search window area
-        # And recast the x and y points into usable format for cv2.fillPoly()
-        left_line_pts, _, _ = self.polynomial_to_points(self.left_fitx , self.ploty, self.margin)
-        right_line_pts, _, _ = self.polynomial_to_points(self.right_fitx , self.ploty, self.margin)
-
-        # Draw the lane onto the warped blank image
-        cv2.fillPoly(window_img, np.int_([left_line_pts]), (0, 255, 0))
-        cv2.fillPoly(window_img, np.int_([right_line_pts]), (0, 255, 0))
-        result = cv2.addWeighted(self.out_img, 1, window_img, 0.3, 0)
-        plt.imshow(result)
-        plt.plot(self.left_fitx, self.ploty, color='yellow')
-        plt.plot(self.right_fitx, self.ploty, color='yellow')
-        plt.xlim(0, 1280)
-        plt.ylim(720, 0)
-        plt.savefig(outdir + "nextframe.jpg")
-
-    def calc_curvature(self, y):
+    def calc_curvature(self):
+        y = self.img_h - 10
         # value taken from Udacity course
         # Define conversions in x and y from pixels space to meters
         ym_per_pix = 30 / 720  # meters per pixel in y dimension
@@ -196,6 +163,7 @@ class Boundary():
         right_curverad = ((1 + (2 * right_fit_cr[0] * y * ym_per_pix + right_fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * right_fit_cr[0])
         # Now our radius of curvature is in meters
         print(left_curverad, 'm', right_curverad, 'm')
+        return left_curverad, right_curverad
 
     def calc_dist_center(self):
         # assume center of image is along the center line of vehicle
@@ -206,9 +174,9 @@ class Boundary():
         print("dist ", dist)
         return dist
 
-    def visualize_lane(self, outdir, color_birdeye, original_img, to_front_matrix, blend_alpha = 0.5):
+    def visualize_lane(self, outdir, original_img, to_front_matrix, blend_alpha = 0.5):
         # input: 3 channel warped image
-        color_birdeye_mask = np.zeros_like(color_birdeye)
+        color_birdeye_mask = np.zeros_like(original_img)
         pts, left_vertices, right_vertices = self.polynomial_to_points(self.left_fitx, self.right_fitx, self.margin)
         # draw lane boundaries on the warped imagely
         # todo: color_birdeye_mask is still zeros after fillPoly
@@ -221,9 +189,19 @@ class Boundary():
         # blend
         img_blend = np.zeros_like(original_img)
         blend_beta = 1- blend_alpha
-        result = cv2.addWeighted(color_front_mask, blend_alpha, original_img, blend_beta, 0.0, img_blend)
-        cv2.imwrite(outdir + "blend.jpg", result)
-        return result
+        result_img = cv2.addWeighted(color_front_mask, blend_alpha, original_img, blend_beta, 0.0, img_blend)
+
+        left_curverad, right_curverad = self.calc_curvature()
+        center_dist = self.calc_dist_center()
+
+        text = "Left curvature = {0:.3f} m \n Right curvature = {0:.3f} m \n Distance to center = center_dist \n"\
+            .format(left_curverad, right_curverad, center_dist)
+
+        cv2.putText(result_img, text, (40, 120), cv2.FONT_HERSHEY_DUPLEX, 1.5, (200, 255, 155), 2, cv2.LINE_AA)
+        if(outdir):
+            cv2.imwrite(outdir + "blend.jpg", result_img)
+
+        return result_img
 
 
 
@@ -238,15 +216,13 @@ def main():
     binary_warped = cv2.cvtColor(warped_img, cv2.COLOR_BGR2GRAY)
     boundaryTool = Boundary()
     boundaryTool.histogram_peaks(outdir, binary_warped)
-    boundaryTool.slid_window()
-    boundaryTool.visualize(outdir)
-    boundaryTool.fit_use_prev(binary_warped)
-    boundaryTool.visualize_fit_prev(outdir)
-    boundaryTool.calc_curvature(boundaryTool.img_h-10)
+    boundaryTool.slide_window(outdir)
+    boundaryTool.fit_use_prev(binary_warped, outdir)
+    boundaryTool.calc_curvature()
     boundaryTool.calc_dist_center()
 
     front_img = cv2.imread('../test_images/straight_lines2.jpg')
-    boundaryTool.visualize_lane(outdir, warped_img, front_img, to_front_matrix)
+    boundaryTool.visualize_lane(outdir, front_img, to_front_matrix)
 
 if __name__ == "__main__":
     main()
