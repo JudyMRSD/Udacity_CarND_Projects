@@ -74,7 +74,9 @@ class Pipeline:
             # Step 5: Detect lane pixels and fit to find the lane boundary as f(y)
             # Determine curvature of the lane and vehicle position with respect to center
             self.boundaryTool.histogram_peaks(outdir, birdeye_binary)
+
             self.boundaryTool.slide_window()
+            self.boundaryTool.visualize(outdir)
         else:
             # Step 4: use previously calculated matrix to warp image
             h, w = binary_front_img.shape[0:2]

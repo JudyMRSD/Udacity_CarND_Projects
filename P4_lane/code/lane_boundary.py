@@ -6,11 +6,10 @@ from perspective_transform import Perspective
 # Used code from Udacity online course 18 :  Detect lane pixels and fit to find the lane boundary
 class Boundary():
     def __init__(self):
-        self.a  = 0
+        self.margin = 100
     def histogram_peaks(self, outdir, img):
         self.img = img
         assert (len(np.unique(self.img) == 2) , "input to histogram_peaks must be binary image, with values 0 or 255")
-        print("img shape", self.img.shape)
         #img = img/255
         # take a histogram along all the columns in the lower half of the image
         histogram = np.sum(self.img[self.img.shape[0] // 2:, :], axis=0)
@@ -18,13 +17,13 @@ class Boundary():
         plt.plot(histogram)
         plt.xlabel('Counts')
         plt.ylabel('Pixel Positions')
-        plt.savefig(outdir + "channels.jpg")
+        print(outdir + "histogram.jpg")
+        plt.savefig(outdir + "histogram.jpg")
         # Find the peak of the left and right halves of the histogram
         # These will be the starting point for the left and right lines
         midpoint = int(histogram.shape[0] // 2)
         self.leftx_base = np.argmax(histogram[:midpoint])
         self.rightx_base = np.argmax(histogram[midpoint:]) + midpoint
-        print(histogram.shape[0],midpoint,self.leftx_base, self.rightx_base)
         plt.close()
 
     def slide_window(self):
@@ -51,11 +50,13 @@ class Boundary():
         # Draw the windows on the visualization image
         self.out_img = cv2.cvtColor(self.img, cv2.COLOR_GRAY2BGR)
         for window in range(nwindows):
-            # Identify window boundaries in x and y (and right and left)
+            # Identify window boundaries in y
             win_y_low = self.img_h - (window + 1) * window_height
             win_y_high = self.img_h - window * window_height
+            # Identify window boundaries in x for left lane
             win_xleft_low = leftx_current - margin
             win_xleft_high = leftx_current + margin
+            # Identify window boundaries in x for right lane
             win_xright_low = rightx_current - margin
             win_xright_high = rightx_current + margin
 
@@ -100,12 +101,7 @@ class Boundary():
         # see writeup images
         self.left_fit = np.polyfit(self.lefty, self.leftx, 2)
         self.right_fit = np.polyfit(self.righty, self.rightx, 2)
-        # Generate x and y values for plotting
-        self.ploty = np.linspace(0, self.img.shape[0] - 1, self.img.shape[0])
 
-        self.left_fitx = self.left_fit[0] * self.ploty ** 2 + self.left_fit[1] * self.ploty + self.left_fit[2]
-        self.right_fitx = self.right_fit[0] * self.ploty ** 2 + self.right_fit[1] * self.ploty + self.right_fit[2]
-        self.margin = 100
 
     def fit_use_prev(self, binary_warped):
         # Assume you now have a new warped binary image
@@ -115,7 +111,7 @@ class Boundary():
         nonzero = binary_warped.nonzero()
         nonzeroy = np.array(nonzero[0])
         nonzerox = np.array(nonzero[1])
-        self.margin = 100
+
 
         left_x = self.left_fit[0] * (nonzeroy ** 2) + self.left_fit[1] * nonzeroy + self.left_fit[2]
         right_x = self.right_fit[0] * (nonzeroy ** 2) + self.right_fit[1] * nonzeroy + self.right_fit[2]
@@ -130,22 +126,18 @@ class Boundary():
         # Fit a second order polynomial to each
         self.left_fit = np.polyfit(lefty, leftx, 2)
         self.right_fit = np.polyfit(righty, rightx, 2)
-        # Generate x and y values for plotting
-        self.ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
-        self.left_fitx = self.left_fit[0] * self.ploty ** 2 + self.left_fit[1] * self.ploty + self.left_fit[2]
-        self.right_fitx = self.right_fit[0] * self.ploty ** 2 + self.right_fit[1] * self.ploty + self.right_fit[2]
 
 
     @staticmethod
-    def polynomial_to_points(x, y, margin):
-        left_vertices = np.array([np.transpose(np.vstack([y, x - margin]))], dtype = np.int32)
-        print("left_vertices", left_vertices.shape)
+    def polynomial_to_points(left_x, right_x, y):
+        left_vertices = np.array([np.transpose(np.vstack([left_x, y]))], dtype = np.int32)
+        print("left_vertices", left_vertices)
         # flip the points on the right edge of the left traffic lane, so the points are ordered for fillPoly
         # 1              6
         # 2              5
         # 3              4
         # window    window 2
-        right_vertices = np.array([np.flipud(np.transpose(np.vstack([y, x + margin])))], dtype = np.int32)
+        right_vertices = np.array([np.flipud(np.transpose(np.vstack([right_x, y])))], dtype = np.int32)
         pts = np.hstack((left_vertices, right_vertices))
 
         vertices = np.array([[(0, 100), (450, 315), (480, 315), (500, 100)]], dtype=np.int32)
@@ -154,8 +146,8 @@ class Boundary():
         print(vertices)
         return pts,left_vertices, right_vertices
 
-
     def calc_curvature(self):
+
         y = self.img_h - 10
         # value taken from Udacity course
         # Define conversions in x and y from pixels space to meters
@@ -180,10 +172,32 @@ class Boundary():
         print("dist ", dist)
         return dist
 
+    def visualize(self, outdir):
+        # Generate x and y values for plotting
+        self.ploty = np.linspace(0, self.img_h - 1, self.img_h)
+        self.left_fitx = self.left_fit[0] * self.ploty ** 2 + self.left_fit[1] * self.ploty + self.left_fit[2]
+        self.right_fitx = self.right_fit[0] * self.ploty ** 2 + self.right_fit[1] * self.ploty + self.right_fit[2]
+        # replace pixels on the lane by blue and red color pixels
+        self.out_img[self.nonzeroy[self.left_lane_inds], self.nonzerox[self.left_lane_inds]] = [255, 0, 0]
+        self.out_img[self.nonzeroy[self.right_lane_inds], self.nonzerox[self.right_lane_inds]] = [0, 0, 255]
+        plt.imshow(self.out_img)
+        plt.plot(self.left_fitx, self.ploty, color='yellow')
+        plt.plot(self.right_fitx, self.ploty, color='yellow')
+        plt.xlim(0, 1280)
+        plt.ylim(720, 0)
+        plt.savefig(outdir + "slidingwindow.jpg")
+        plt.close()
+
     def visualize_lane(self, outdir, original_img, to_front_matrix, blend_alpha = 0.5):
+        # Generate x and y values for plotting
+        img_height = original_img.shape[0]
+        img_width = original_img.shape[1]
+        self.ploty = np.linspace(0, original_img.shape[0] - 1, original_img.shape[0])
+        self.left_fitx = self.left_fit[0] * self.ploty ** 2 + self.left_fit[1] * self.ploty + self.left_fit[2]
+        self.right_fitx = self.right_fit[0] * self.ploty ** 2 + self.right_fit[1] * self.ploty + self.right_fit[2]
         # input: 3 channel warped image
         color_birdeye_mask = np.zeros_like(original_img)
-        pts, left_vertices, right_vertices = self.polynomial_to_points(self.left_fitx, self.right_fitx, self.margin)
+        pts, left_vertices, right_vertices = self.polynomial_to_points(self.left_fitx, self.right_fitx, self.ploty)
         # draw lane boundaries on the warped imagely
         # todo: color_birdeye_mask is still zeros after fillPoly
         print("pts", pts)
@@ -217,8 +231,6 @@ class Boundary():
             cv2.imwrite(outdir + "blend.jpg", result_img)
 
         return result_img
-
-
 
 def main():
     to_front_matrix = np.array([[ 1.40625000e-01, -7.63888889e-01,  5.50000000e+02],

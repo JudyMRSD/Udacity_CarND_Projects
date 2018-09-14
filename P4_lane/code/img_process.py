@@ -107,6 +107,7 @@ class Image_Process:
         # cv2.waitKey(0)
         if (outdir is not None):
             plt.savefig(outdir + "first_frame_channels.jpg")
+        plt.close()
 
         return closing
 
