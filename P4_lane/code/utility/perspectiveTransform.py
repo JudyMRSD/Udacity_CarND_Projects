@@ -25,22 +25,14 @@ class Perspective():
         if out_dir:
             print("out_dir", out_dir)
             front_color = cv2.cvtColor(front_img, cv2.COLOR_GRAY2RGB)
-            cv2.circle(front_color, (200, 200), 55, (0, 255, 255), -1)
-            print("front_img.shape", front_color.shape)
-            cv2.imwrite(out_dir + "lines_front.jpg", front_img)
-            cv2.imshow("front", front_color)
-            cv2.waitKey(0)
-            src = np.float32([[h, w],
-                              [h, 0],
-                              [left_lane_top_y, left_lane_top_x],
-                              [right_lane_top_y, right_lane_top_x]])
+            birdeye_color = cv2.cvtColor(birdeye_img, cv2.COLOR_GRAY2RGB)
+
             front_pts = src.reshape(-1, 1, 2).astype(np.int32)
-            print("front_pts", front_pts)
-            front_lines = cv2.polylines(front_color
-                                        , front_pts, color=(0, 255, 0), thickness=5, isClosed=False)
+            front_lines = cv2.polylines(front_color, front_pts, color=(0, 255, 0), thickness=50, isClosed=True)
             cv2.imwrite(out_dir + "lines_front.jpg", front_lines)
 
             birdeye_pts = dst.reshape(-1, 1, 2).astype(np.int32)
-            birdeye_lines = cv2.polylines(birdeye_img, birdeye_pts, color=(0, 255, 0), thickness=5, isClosed=False)
+            birdeye_lines = cv2.polylines(birdeye_color, birdeye_pts, color=(0, 255, 0), thickness=50, isClosed=True)
             cv2.imwrite(out_dir+ "lines_birdeye.jpg", birdeye_lines)
+
         return birdeye_img, to_bird_matrix, to_front_matrix
