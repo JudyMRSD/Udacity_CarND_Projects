@@ -1,10 +1,9 @@
-# adapted from Udacity course sample code section for color and graident
 # Use color transforms, gradients, etc., to create a thresholded binary image.
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import os
+
+
 class Image_Process:
     def __init__(self):
         self.a = 0
@@ -111,15 +110,3 @@ class Image_Process:
 
         return closing
 
-def main():
-    # main function for unit test of img_process.py
-    print("main")
-    outdir = '../output_images/thresh_out/'
-    input_img_path='../test_images/test5.jpg'
-
-
-    pipeline = Image_Process()
-    pipeline.visualize(input_img_path)
-
-if __name__ == "__main__":
-    main()
