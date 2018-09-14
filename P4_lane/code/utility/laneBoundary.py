@@ -197,8 +197,8 @@ class Boundary():
         center_dist = self.calc_dist_center()
 
         # put text on image
-        curv_left_text =  "Left  lane curvature = {0:.2f} rad".format(left_curverad)
-        curv_right_text = "Right lane curvature = {0:.2f} rad".format(left_curverad)
+        curv_left_text =  "Left  lane curvature radius = {0:.2f} m".format(left_curverad)
+        curv_right_text = "Right lane curvature radius = {0:.2f} m".format(left_curverad)
         center_dist_text ="Distance to center = {0:.2f} m".format(center_dist)
 
         cv2.putText(result_img, curv_left_text, (10, 50), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)

@@ -4,23 +4,23 @@ import numpy as np
 import cv2
 import glob
 import os
+
 class CameraCalibration:
     def __init__(self):
         # Arrays to store object points and image points from all the images.
-        self.objpoints = []  # 3d points in real world space
-        self.imgpoints = []  # 2d points in image plane.
+        self.objpoints = []  # 3d points in world coordinates
+        self.imgpoints = []  # 2d points in image plane
 
-    @staticmethod
-    def getbase(filename):
-        # input: filename      integer.suffix
-        base = os.path.basename(filename)
-        file_index = int(os.path.splitext(base)[0])
-        return file_index
-
-    # corner_rows  # number of corners (not count ones on chessboard boarder
-    def find_corners(self, chessboard_in_paths, chessboard_out_paths, corner_rows, corner_cols):
-        image_paths = sorted(glob.glob(chessboard_in_paths), key=self.getbase)
-        # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
+    def find_corners(self, chessboard_in_dir, chessboard_out_dir, corner_rows, corner_cols):
+        '''
+        Detect chessboard corners and visualize
+        :param chessboard_in_dir: Directory containing chessboard images
+        :param chessboard_out_dir: Directory to store chessboard images with detected corners
+        :param corner_rows: Ground truth number of rows for chessboards
+        :param corner_cols: Ground truth number of columns for chessboards
+        '''
+        image_paths = glob.glob(chessboard_in_dir)
+        # prepare object points in 3d world coordinate, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         objp = np.zeros((corner_cols* corner_rows,3), np.float32)
         objp[:,:2] = np.mgrid[0:corner_cols, 0:corner_rows].T.reshape(-1,2)
         # Step through the list and search for chessboard corners
@@ -35,7 +35,7 @@ class CameraCalibration:
 
                 # Draw and display the corners
                 cv2.drawChessboardCorners(img, (corner_rows,corner_cols), corners, ret)
-                write_name = chessboard_out_paths+str(idx+1)+'.jpg'
+                write_name = chessboard_out_dir + str(idx + 1) + '.jpg'
                 cv2.imwrite(write_name, img)
             else:
                 print("specified amount of corners not detected from fname", fname)

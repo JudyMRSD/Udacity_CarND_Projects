@@ -38,8 +38,6 @@ class Pipeline:
         # Step 2: Apply a distortion correction to raw images.
         undistort_front = cv2.undistort(input_img, self.camera_matrix, self.distorsion_coefficient, None, self.camera_matrix)
         if (out_dir):
-            print("write", out_dir + "undistort_front.jpg")
-
             cv2.imwrite(out_dir + "undistort_front.jpg", undistort_front)
         # Step 3: Use color transforms, gradients, etc., to create a thresholded binary image
         binary_front_img = self.threshTool.visualize(undistort_front, out_dir)
