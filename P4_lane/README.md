@@ -1,12 +1,12 @@
 # writeup
-(self.l_binary == 1): use lightness to separate bright and dark region , only keep bright region  
-(self.s_binary == 1): use saturation to separate out separate tree and yellow lane lines from road
-(self.s_binary == 1) & (self.l_binary == 1) : color different from road and is not caused by lighting difference 
 
-(self.sxbinary == 1): use sobel filter to find edges 
-
-(self.s_binary == 1) & (self.l_binary == 1) | (self.sxbinary == 1)
-
+# Sliding Window
+Line Finding Method: Peaks in a Histogram
+Step 1: Take a histogram along all the columns in the lower half of the image </br>
+The two most prominent peaks in this histogram will be good
+indicators of the x-position of the base of the lane lines. </br>
+Step2: Use a sliding window to place around the line centers and follow 
+the lines up to the top of the frame </br>
 
 ## Advanced Lane Finding
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
@@ -52,6 +52,10 @@ The `challenge_video.mp4` video is an extra (and optional) challenge for you if 
 
 If you're feeling ambitious (again, totally optional though), don't stop there!  We encourage you to go out and take video of your own, calibrate your camera and show us how you would implement this project from scratch!
 
+
+
 ## How to write a README
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
+## Perspective transform
+Includes all possible 2D transformations as a 3x3 matrix 
