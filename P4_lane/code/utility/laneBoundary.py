@@ -20,6 +20,7 @@ class Boundary():
     def y_to_x(self, y):
         # calculate x = ay**2 + by + c
         # self.left_fit and self.right_fit contains [a,b,c]
+        print("self.left_fit" , self.left_fit)
         self.left_fit_x = self.left_fit[0] * (y ** 2) + self.left_fit[1] * y + self.left_fit[2]
         self.right_fit_x = self.right_fit[0] * (y ** 2) + self.right_fit[1] * y + self.right_fit[2]
         print("self.left_fit_x.shape", self.left_fit_x.shape,"y.shape", y.shape )
@@ -100,9 +101,10 @@ class Boundary():
                       (0, 255, 0), 2)
 
     def recenter_window(self):
+        # Part 1: find indices for pixels within the current window that have nonzero intensity
         # bool_in_window_left[i] is true when self.nonzeroy[i] and self.nonzerox[i] is a point in window
         bool_in_window_left = ((self.nonzeroy >= self.win_y_low) & (self.nonzeroy < self.win_y_high) &
-                          (self.nonzerox >= self.win_xleft_low) & (self.nonzerox < self.win_xright_low))
+                          (self.nonzerox >= self.win_xleft_low) & (self.nonzerox < self.win_xleft_high))
         # convert from [False True ....] to [1 ...]
         idx_in_window_left = np.nonzero(bool_in_window_left)
         # array of one list, take 0th list to reduce the dimension
@@ -113,6 +115,8 @@ class Boundary():
         idx_in_window_right = ((self.nonzeroy >= self.win_y_low) & (self.nonzeroy < self.win_y_high) &
                            (self.nonzerox >= self.win_xright_low) & (self.nonzerox < self.win_xright_high)).nonzero()[0]
         self.right_lane_inds.append(idx_in_window_right)
+
+        # Part 2: recenter window for left or right lane
 
         # If you found > minpix pixels, recenter next window on their mean position
         if len(idx_in_window_left) > self.minpix:
@@ -143,6 +147,9 @@ class Boundary():
         # turn this into a flat numpy array   1x total number of valid pixels in all windows
         self.left_lane_inds = np.concatenate(self.left_lane_inds)
         self.right_lane_inds = np.concatenate(self.right_lane_inds)
+
+
+
 
     def fit_use_prev(self):
         # Assume you now have a new warped binary image
@@ -184,14 +191,16 @@ class Boundary():
         self.righty = self.nonzeroy[self.right_lane_inds]
 
         # Fit a second order polynomial to each
-        # use function x(y) instead of y(x) since polyfit needs input x, y in increasing order
-        # treat x as vertical axis and y as horizontal axis ensures both vertical and horizontal axis are in increasing order
-        # see writeup images
+        # use function x(y) instead of y(x)
         self.left_fit = np.polyfit(self.lefty, self.leftx, 2)
         self.right_fit = np.polyfit(self.righty, self.rightx, 2)
 
 
+
+
     def visualize_lane(self, outdir, original_img, to_front_matrix, blend_alpha = 0.5):
+
+        # Part 1: Create an image with lanes in bird-eye view, then warp it to front view
         # Generate x and y values for plotting
         self.ploty = np.linspace(0, original_img.shape[0] - 1, original_img.shape[0])
         self.y_to_x(self.ploty)
@@ -203,13 +212,15 @@ class Boundary():
         cv2.fillPoly(color_birdeye_mask, [pts], (0,255,0))
         cv2.polylines(color_birdeye_mask,[left_vertices], isClosed = False, color =  (255, 0,0), thickness = 20)
         cv2.polylines(color_birdeye_mask, [right_vertices], isClosed = False, color =  (0, 0, 255), thickness = 20)
-        # Idea taken from https://github.com/jeremy-shannon/CarND-Advanced-Lane-Lines/blob/master/project.ipynb
-        # warp the mask back to original image (fornt view)
+        # warp the mask back to original image (front view)
         color_front_mask = cv2.warpPerspective(color_birdeye_mask,to_front_matrix , (self.img_w, self.img_h))
-        # blend
+
+        # Part 2: blend original image with the lanes
         img_blend = np.zeros_like(original_img)
         blend_beta = 1- blend_alpha
         result_img = cv2.addWeighted(color_front_mask, blend_alpha, original_img, blend_beta, 0.0, img_blend)
+
+        # Part 3: show curvature and distance to center
 
         # calculate curvature and center dist
         left_curverad, right_curverad = self.calc_curvature()
@@ -225,7 +236,8 @@ class Boundary():
         cv2.putText(result_img, center_dist_text, (10, 150), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         if(outdir):
-            cv2.imwrite(outdir + "lane_border.jpg", color_front_mask)
+            cv2.imwrite(outdir + "lane_border_birdeye.jpg", color_birdeye_mask)
+            cv2.imwrite(outdir + "lane_border_front.jpg", color_front_mask)
             cv2.imwrite(outdir + "blend.jpg", result_img)
 
         return result_img

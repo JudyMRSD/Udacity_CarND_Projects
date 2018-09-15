@@ -46,17 +46,16 @@ class Pipeline:
             # to_bird_matrix, to_front_matrix only need to be calculated on the first frame
             birdeye_binary, self.to_bird_matrix, self.to_front_matrix = self.perspectiveTool.warp_front_to_birdeye(
                                                                     binary_front_img, out_dir)
-            # Step 5: Detect lane pixels and fit to find the lane boundary as f(y)
-            # Determine curvature of the lane and vehicle position with respect to center
+
             self.boundaryTool.histogram_peaks(out_dir, birdeye_binary)
 
         else:
             # Step 4: use previously calculated matrix to warp image
             h, w = binary_front_img.shape[0:2]
             birdeye_binary = cv2.warpPerspective(binary_front_img, self.to_bird_matrix, (w, h))
-            # Step 5: only search in a margin around the previous line position l
-            # Detect lane and warp the detected lane boundaries back onto the original image
 
+        # Step 5: Detect lane pixels and fit to find the lane boundary as f(y)
+        # Determine curvature of the lane and vehicle position with respect to center
         self.boundaryTool.fit_lane(birdeye_binary, idx)
         # Step 6-8: Determine the curvature and vehicle position, and warp back to original image
         result_imgself = self.boundaryTool.visualize_lane(out_dir, input_img, self.to_front_matrix, blend_alpha=0.5)

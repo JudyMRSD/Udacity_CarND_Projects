@@ -53,6 +53,11 @@ project
 [binary_threshold_channels]: ./data/writeup_images/first_frame_channels.jpg
 [sobel_hls]: ./data/writeup_images/sobel_hls.png
 [closing]: ./data/writeup_images/closing.png
+[front_view]: ./data/writeup_images/lines_front.jpg
+[bird_eye_view]: ./data/writeup_images/lines_birdeye.jpg
+[histogram]: ./data/writeup_images/histogram.jpg
+[sliding_window]: ./data/writeup_images/slidingwindow.jpg
+[blend_lane]: ./data/writeup_images/blend.jpg
 # Basic Concepts
 ####Camera intrinsic and extrinsic matrices
 In pinhole camera model, a scene view is formed by projecting 3D points into the image plane 
@@ -86,8 +91,6 @@ The intrinsic and extrinsic matrices are summarized below.
 ![alt text][matrixDecomposition]
 Image taken from `http://ksimek.github.io/2013/08/13/intrinsic/`</br>
 
-
-
 # Pipeline
 #### S1: Camera Calibration 
 Implementation is in cameraCalib.py.
@@ -105,7 +108,6 @@ as a list `objpoints`. </br>
 Implemented in `pipeline.py` function `calc_intrinsics_test`. 
 Opencv function `calibrateCamera` finds the camera intrinsic and extrinsic parameters using `imgpoints` and `objpoints`. 
 `cv2.calibrateCamera(objectPoints, imagePoints, imageSize) → retval, cameraMatrix, distCoeffs, rvecs, tvecs`
-
 
 ![alt text][calibration]
 
@@ -151,24 +153,13 @@ to the world coordinate space. This is the extrinsics `[R|t]` mentioned above.
 For each image read from the video, undistortion was applied first.
 using `camera_matrix` and `distorsion_coefficient`.
 Following is an example of undistorted images.
+* Chessboard with corners detected.
 
-<table style="width:100%">
-  <tr>
-    <th>
-      <p align="center">
-           <img src="./img/./data/writeup_images/2.jpg" alt="sliding_windows_before" width="60%" height="60%">
-           <br> Original checkerboard
-      </p>
-    </th>
-    <th>
-      <p align="center">
-           <img src="./img/./data/writeup_images/2_undist.jpg" alt="sliding_windows_after" width="60%" height="60%">
-           <br>After undistortion
-      </p>
-    </th>
-  </tr>
-</table>
+![alt text][chessboard2]  
 
+* Chessboard undistorted
+
+![alt text][chessboard2_undistort]
 
 
 Following is an example of an image taken from vehicle's perspective.
@@ -224,16 +215,78 @@ The thresholded binary image result returned by function `combine_thresh` is use
 
 
 #### S4: Apply a perspective transform to rectify binary image ("birds-eye view").
+In order to warp the front view to a birds-eye view, 4 corresponding points are needed in the original image
+and birds-eye view image. The 4 points are hand selected being points on the lanes, since the left and right 
+lanes should become parallel after warping, as shown in the following images.
 
+Front view: 
 
+![alt text][front_view]
+
+Birds-eye view:
+
+![alt text][bird_eye_view]
+
+The function `warp_front_to_birdeye` in `perspectiveTransform.py` only need to be called once for the first frame
+to calculate the perspective transformation, and the same transformation matrix can be used for
+following frames. 
 
 #### S5: Detect lane pixels and fit to find the lane boundary as f(y)
 
-Fitting f(y) rather than f(x) because the lane lines in the warped image
+###### S5.1 Locate peak using histogram
+
+After applying calibration, thresholding, and a perspective transform to a road image, 
+this step decides the approximate location of left line and right line.
+
+This is achieved by taking a histogram along all the columns in the lower half of the image,
+and find the peak of the left and right halves of the histogram. 
+These will be the starting point for the left and right lines.
+
+Following is the histogram. The x coordinates that gives the largest count for left and 
+right half of the image would correspond to the left and right lanes, which are
+284 and 1137 in the x coordinates shown in the following histogram. This is implemented in `histogram_peaks` function
+in `laneBoundary.py`. 
+
+![alt text][histogram]
+
+This step is only needed for the first frame, since the later frames only needs to search in a margin around 
+the previous line position.
+
+
+###### S5.2 Detect lane
+Lane detection for the first frame uses sliding window as implemnted in `slide_window` in `laneBoundary.py`.
+Use the x coordinate for the two highest peaks from the histogram as a starting point
+for determining where the lane lines are. Then use sliding windows moving upward in the 
+image (further along the road) to determine where the lane lines go.
+
+Use the x coordinate found in previous step for left and right lane as 
+a starting point. Then create a window centered at the x coordinate for
+each lane, as shown in `create_window` function in `laneBoundary.py`.
+
+Next, find indices for pixels within the current window that have nonzero intensities.
+If the count of nonzero pixels is more than a threshold, 
+recenter the window using the mean x-coordinate of these nonzero pixels, as shown in the following image.
+The green boxes are the search windows, the red and blue highlighted pixels 
+are pixels belonging to the lanes after sliding window search. 
+
+![alt text][sliding_window]
+
+If the frame is not the first frame, the search only needs to happend in a margin around the
+ previous lane position, as implemented in `fit_use_pref`.
+ 
+In both cases, input was first frame or not, the indices for nonzero pixels that should
+belong to left or right lane are stored as a numpy array for the next step. These are the red and blue highlighted pixels 
+in the image above. 
+
+###### S5.3 Fit lane
+This step fits f(y) rather than f(x) because the lane lines in the warped image
 is nearly vertical and may have the same x value for more than one y value.
 
+The lane function f(y) is approximated using a second order polynomial. The fitted line is plotted in yellow shown in the image in S5.2.
+ 
 #### S6: Determine the curvature of the lane and vehicle position with respect to center.
 
+###### S6.1 Lane Curvature
 Radius of curvature intuition:
 The radius of curvature of the curve at a particular point is defined as the radius of the approximating circle. 
 This radius changes as we move along the curve. 
@@ -241,11 +294,26 @@ This radius changes as we move along the curve.
 The curvature calculation has to be performed on the frame that's warped to the birdeye view.
 
 When calculating the curve from the car view, the curvature obtained is not the "real" curvature 
-because it's seen in a different perspective. 
+because it's seen in a different perspective. This is implemented in `calc_curvature` in file `laneBoundary.py`.
 
-When we calculate throw the bird-eye view, we have the true curvature of the lane related to the ground.
+###### S6.2 Vehicle Position
+Assume center of vehicle is at the center of image, and take the center between the left and right lanes
+near the bottom of image (close to the vehicle side not the horizon side) as center of road.
+
+Then convert the distance between vehicle center and lane center from pixel to meters. 
 
 #### S7: Warp the detected lane boundaries back onto the original image.
+
+First, create an image with left and right lanes plotted bird-eye view, then warp it to front view. 
+This image with lanes plotted was blended with original front view image, as shown below. 
+
+The part is implemented in `visualize_lane`.
+
+![alt text][blend_lane]
+
+
+
+
 #### S8: Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
  
 Assumptions:
