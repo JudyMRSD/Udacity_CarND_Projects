@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 
 
 class Image_Process:
-    def __init__(self):
-        self.a = 0
+
     def sobel_thresh(self):
         '''
         Convert image to gray scale and threshold on edge intensity obtained by sobel filter

@@ -19,12 +19,14 @@ class CameraCalibration:
         :param corner_rows: Ground truth number of rows for chessboards
         :param corner_cols: Ground truth number of columns for chessboards
         '''
-        image_paths = glob.glob(chessboard_in_dir)
+        image_paths = glob.glob(chessboard_in_dir+"*.jpg")
+        print("image_paths", image_paths)
         # prepare object points in 3d world coordinate, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         objp = np.zeros((corner_cols* corner_rows,3), np.float32)
         objp[:,:2] = np.mgrid[0:corner_cols, 0:corner_rows].T.reshape(-1,2)
         # Step through the list and search for chessboard corners
         for idx, fname in enumerate(image_paths):
+            print("fname", fname)
             img = cv2.imread(fname)
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             ret, corners = cv2.findChessboardCorners(gray, (corner_cols, corner_rows), None)
@@ -41,7 +43,7 @@ class CameraCalibration:
                 print("specified amount of corners not detected from fname", fname)
         self.img_size = (img.shape[1], img.shape[0])
 
-    def calc_param(self,chessboard_in_paths, chessboard_out_paths, corner_rows, corner_cols, save_params_path):
+    def calc_param(self, chessboard_in_dir, chessboard_out_dir, corner_rows, corner_cols, save_params_path):
         '''
         Do camera calibration given object points and image points
         Finds the camera intrinsic and extrinsic parameters from several views of a calibration pattern.
@@ -49,7 +51,7 @@ class CameraCalibration:
         self.dist_coeff     distortion coefficient    [k1, k2, p1, p2 [k3, k4, k5, k6]]
         rvecs, tvecs are rotation and translation vectors representing the transformation from 3D world to 3d camera coordinate
         '''
-        self.find_corners(chessboard_in_paths, chessboard_out_paths, corner_rows, corner_cols)
+        self.find_corners(chessboard_in_dir, chessboard_out_dir, corner_rows, corner_cols)
         ret, self.camera_matrix, self.dist_coeff, rvecs, tvecs = cv2.calibrateCamera(self.objpoints, self.imgpoints, self.img_size, None, None)
 
         # Save the camera calibration result for later use (we won't worry about rvecs / tvecs)

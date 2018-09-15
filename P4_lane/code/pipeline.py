@@ -9,7 +9,6 @@ import matplotlib.image as mpimg
 import tqdm
 import pickle
 
-
 # TODO: remove this when submit
 # Flag to run on MacOS or Ubuntu for video processing
 Mac = True # False for Ubuntu system, different video format
@@ -23,7 +22,7 @@ class Pipeline:
 
     def check_paths(self, data_dir):
         self.chessboard_in_dir = data_dir + 'camera_cal/'
-        self.chessboard_out_dir = data_dir + 'output_images/camera_cal_out/'
+        self.chessboard_out_dir = data_dir + 'camera_cal_out/'
         # directories for chessboard images used in calibration and place to save parameters after calibration
         self.save_params_path = data_dir + 'camera_calib_param/dist_pickle.p'
         # check correctness of folders paths
@@ -61,8 +60,9 @@ class Pipeline:
 
     def process_video(self, in_video, out_video, calibrate):
         # Step 1 : Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
-        if os.path.exists(self.chessboard_out_dir) or calibrate:
-            self.calibTool.calc_param(self.chessboard_in_paths, self.chessboard_out_paths, 6, 9, self.save_params_path)
+        if not os.path.exists(self.chessboard_out_dir) or calibrate:
+            print("self.chessboard_in_dir",self.chessboard_in_dir)
+            self.calibTool.calc_param(self.chessboard_in_dir, self.chessboard_out_dir, 6, 9, self.save_params_path)
 
         cap = cv2.VideoCapture(in_video)
         # get properties of input video, so the output video can match these properties
@@ -97,25 +97,26 @@ def main():
     # Following are directory paths and parameter values that could be changed if running on a different dataset
     data_dir = '../data/'
     in_video = data_dir+"video/input_video/project_video.mp4"
-    out_video = data_dir+"video/input_video/project_video_out.mp4"
+    out_video = data_dir+"video/output_video/project_video_out.mp4"
     # Points (hand selected) needed to warp images to bird eye view, these are hand selected points
     # lane_ends = [left_lane_top_x, left_lane_top_y, right_lane_top_x, right_lane_top_y] encodes the end of two lanes
     # that maps to (0,0) and (w,0) in bird eye view, doesn't change if intrinsics and extrinsics not changed
 
+
     pl = Pipeline()
     pl.check_paths(data_dir)
+    #
+    #
+    # dist_pickle = pickle.load(open(data_dir + 'camera_calib_param/dist_pickle.p', 'rb'))
+    # pl.camera_matrix = dist_pickle["camera_matrix"]
+    # pl.distorsion_coefficient = dist_pickle["distorsion_coefficient"]
+    # input_img = cv2.imread(data_dir+'test_images/test2.jpg')
+    # pl.process_single_img(0, input_img, out_dir=data_dir+"pipeline_out/")
 
 
-    dist_pickle = pickle.load(open(data_dir + 'camera_calib_param/dist_pickle.p', 'rb'))
-    pl.camera_matrix = dist_pickle["camera_matrix"]
-    pl.distorsion_coefficient = dist_pickle["distorsion_coefficient"]
-    input_img = cv2.imread(data_dir+'test_images/test2.jpg')
-    pl.process_single_img(0, input_img, out_dir=data_dir+"pipeline_out/")
-
-
-    # input and output video directory
-    # Step 2-8 : process each frame in the video
-    # pl.process_video(lane_ends, in_video, out_video, calibrate=False)
+    #input and output video directory
+    # Step 2-7 : process each frame in the video
+    pl.process_video(in_video, out_video, calibrate=False)
 
 
 if __name__ == "__main__":

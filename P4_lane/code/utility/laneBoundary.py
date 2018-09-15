@@ -49,7 +49,9 @@ class Boundary():
         plt.plot(histogram)
         plt.xlabel('Pixel Positions')
         plt.ylabel('Counts')
-        plt.savefig(outdir + "histogram.jpg")
+
+        if (outdir):
+            plt.savefig(outdir + "histogram.jpg")
         # Find the peak of the left and right halves of the histogram
         # These will be the starting point for the left and right lines
         midpoint = int(histogram.shape[0] // 2)

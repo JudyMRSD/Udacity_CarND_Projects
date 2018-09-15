@@ -6,8 +6,6 @@ import matplotlib.pyplot as plt
 
 out_dir = "../output_images/thresh_out/"
 class ColorSpace:
-    def __init__(self):
-        self.a = 0
 
     def plot_channels(self, base, color_space_imgs, color_space_list):
 

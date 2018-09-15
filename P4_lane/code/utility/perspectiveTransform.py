@@ -1,11 +1,13 @@
+# Perform perspective transformation to warp front view to bird-eye view
 import cv2
 import numpy as np
 
+# Points (hand selected) needed to warp images to bird eye view, these are hand selected points
+# lane_ends = [left_lane_top_x, left_lane_top_y, right_lane_top_x, right_lane_top_y] encodes the end of two lanes
+# that maps to (0,0) and (w,0) in bird eye view, doesn't change if intrinsics and extrinsics not changed
 Left_lane_top_x, Left_lane_top_y, Right_lane_top_x, Right_lane_top_y = 550, 460, 730, 460
-class Perspective():
-    def __init__(self):
-        self.a = 0
 
+class Perspective():
     # the transformation only needs to be calculated once, assuming the extrinsics and intrinxics did not change
     def warp_front_to_birdeye(self, front_img, out_dir=None):
         h, w = front_img.shape[0:2]
@@ -21,9 +23,10 @@ class Perspective():
         to_bird_matrix = cv2.getPerspectiveTransform(src, dst)
         to_front_matrix = cv2.getPerspectiveTransform(dst, src)
         birdeye_img = cv2.warpPerspective(front_img, to_bird_matrix, (w, h))
-        cv2.imwrite(out_dir+"birdeye.jpg", birdeye_img)
+
         if out_dir:
-            print("out_dir", out_dir)
+            cv2.imwrite(out_dir + "birdeye.jpg", birdeye_img)
+
             front_color = cv2.cvtColor(front_img, cv2.COLOR_GRAY2RGB)
             birdeye_color = cv2.cvtColor(birdeye_img, cv2.COLOR_GRAY2RGB)
 
