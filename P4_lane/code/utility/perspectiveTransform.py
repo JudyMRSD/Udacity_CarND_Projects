@@ -1,18 +1,18 @@
 import cv2
 import numpy as np
 
+Left_lane_top_x, Left_lane_top_y, Right_lane_top_x, Right_lane_top_y = 550, 460, 730, 460
 class Perspective():
     def __init__(self):
         self.a = 0
 
     # the transformation only needs to be calculated once, assuming the extrinsics and intrinxics did not change
-    def warp_front_to_birdeye(self, lane_ends, front_img, out_dir=None):
-        left_lane_top_x, left_lane_top_y, right_lane_top_x, right_lane_top_y = lane_ends
+    def warp_front_to_birdeye(self, front_img, out_dir=None):
         h, w = front_img.shape[0:2]
         src = np.float32([[w, h],
                           [0, h],
-                          [left_lane_top_x, left_lane_top_y],
-                          [right_lane_top_x, right_lane_top_y]])
+                          [Left_lane_top_x, Left_lane_top_y],
+                          [Right_lane_top_x, Right_lane_top_y]])
         dst = np.float32([[w, h],
                           [0, h],
                           [0, 0],

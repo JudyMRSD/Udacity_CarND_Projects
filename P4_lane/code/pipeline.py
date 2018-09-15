@@ -41,34 +41,32 @@ class Pipeline:
             cv2.imwrite(out_dir + "undistort_front.jpg", undistort_front)
         # Step 3: Use color transforms, gradients, etc., to create a thresholded binary image
         binary_front_img = self.threshTool.visualize(undistort_front, out_dir)
-        if (idx==1):
+        if (idx==0):
             # Step 4: Apply a perspective transform to rectify binary image ("birds-eye view").
             # to_bird_matrix, to_front_matrix only need to be calculated on the first frame
             birdeye_binary, self.to_bird_matrix, self.to_front_matrix = self.perspectiveTool.warp_front_to_birdeye(
-                                                                    self.lane_ends,
                                                                     binary_front_img, out_dir)
             # Step 5: Detect lane pixels and fit to find the lane boundary as f(y)
             # Determine curvature of the lane and vehicle position with respect to center
             self.boundaryTool.histogram_peaks(out_dir, birdeye_binary)
 
-            self.boundaryTool.slide_window()
         else:
             # Step 4: use previously calculated matrix to warp image
             h, w = binary_front_img.shape[0:2]
             birdeye_binary = cv2.warpPerspective(binary_front_img, self.to_bird_matrix, (w, h))
             # Step 5: only search in a margin around the previous line position l
             # Detect lane and warp the detected lane boundaries back onto the original image
-            self.boundaryTool.fit_use_prev(birdeye_binary)
+
+        self.boundaryTool.fit_lane(birdeye_binary, idx)
         # Step 6-8: Determine the curvature and vehicle position, and warp back to original image
         result_imgself = self.boundaryTool.visualize_lane(out_dir, input_img, self.to_front_matrix, blend_alpha=0.5)
         return result_imgself
 
-    def process_video(self, lane_ends, in_video, out_video, calibrate):
+    def process_video(self, in_video, out_video, calibrate):
         # Step 1 : Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
         if os.path.exists(self.chessboard_out_dir) or calibrate:
             self.calibTool.calc_param(self.chessboard_in_paths, self.chessboard_out_paths, 6, 9, self.save_params_path)
 
-        self.lane_ends = lane_ends
         cap = cv2.VideoCapture(in_video)
         # get properties of input video, so the output video can match these properties
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -77,7 +75,7 @@ class Pipeline:
 
         writer = cv2.VideoWriter_fourcc(*'mp4v')
         # process videos frame by frame, from the first to the last frame
-        frame_indices = np.arange(1, int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
+        frame_indices = np.arange(0, int(cap.get(cv2.CAP_PROP_FRAME_COUNT))-1)
 
         if Mac:
             out_video = cv2.VideoWriter(out_video, writer, fps, (frame_width, frame_height))  # run Mac
@@ -106,18 +104,16 @@ def main():
     # Points (hand selected) needed to warp images to bird eye view, these are hand selected points
     # lane_ends = [left_lane_top_x, left_lane_top_y, right_lane_top_x, right_lane_top_y] encodes the end of two lanes
     # that maps to (0,0) and (w,0) in bird eye view, doesn't change if intrinsics and extrinsics not changed
-    lane_ends = [550, 460, 730, 460]
 
     pl = Pipeline()
     pl.check_paths(data_dir)
 
-    # test on a single image
-    pl.lane_ends = [550, 460, 730, 460]
+
     dist_pickle = pickle.load(open(data_dir + 'camera_calib_param/dist_pickle.p', 'rb'))
     pl.camera_matrix = dist_pickle["camera_matrix"]
     pl.distorsion_coefficient = dist_pickle["distorsion_coefficient"]
     input_img = cv2.imread(data_dir+'test_images/test2.jpg')
-    pl.process_single_img(1, input_img, out_dir=data_dir+"pipeline_out/")
+    pl.process_single_img(0, input_img, out_dir=data_dir+"pipeline_out/")
 
 
     # input and output video directory
