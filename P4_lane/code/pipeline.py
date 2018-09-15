@@ -8,8 +8,6 @@ import cv2
 import tqdm
 import pickle
 
-# Flag to run on MacOS or Ubuntu for video processing
-Mac = True # False for Ubuntu system, to use different video format
 
 class Pipeline:
     def __init__(self):
@@ -82,10 +80,7 @@ class Pipeline:
         # process videos frame by frame, from the first to the last frame
         frame_indices = np.arange(0, int(cap.get(cv2.CAP_PROP_FRAME_COUNT))-1)
 
-        if Mac:
-            out_video = cv2.VideoWriter(out_video, writer, fps, (frame_width, frame_height))  # run Mac
-        else:
-            out_video = cv2.VideoWriter(out_video, 0x00000021, fps, (frame_width, frame_height))  # run on Ubuntu
+        out_video = cv2.VideoWriter(out_video, writer, fps, (frame_width, frame_height))  # run Mac
 
         dist_pickle = pickle.load(open(self.save_params_path, 'rb'))
         self.camera_matrix = dist_pickle["camera_matrix"]

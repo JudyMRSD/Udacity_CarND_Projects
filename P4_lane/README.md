@@ -37,6 +37,7 @@ project
 |   └───writeup_images/                 Selected output images to use in writeup 
 |   └───pipeline_out/                      *.jpg images for visualization
 |   └───camera_calib_param/             Save the camera calibration result for later use
+|   └───env/                            Anaconda environment to reproduce the result
 
 ```
 
