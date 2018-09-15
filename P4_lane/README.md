@@ -169,14 +169,14 @@ The result can be observed on the flattened curve from front of vehicle and a le
 #### S3: Binary image of lane lines 
 Use color transforms, gradients, etc., to create a thresholded binary image.
 
-######S3.1 Gradient thresholding
+###### S3.1 Gradient thresholding
 Sobel filter is a weighted average of x derivatives or y derivatives. Thus, convolving sobel filter 
 over an image can extract the x and y edge responses. Here Sobel x was used, since the lane running in
 y direction is of interest. 
 
 ![alt text][sobel_hls]
 
-######S3.2 Color thresholding
+###### S3.2 Color thresholding
 HSL represents color in hue, saturation and lightness. 
 
 Hue is a degree on the color wheel from 0 to 360. 0 is red, 120 is green, 240 is blue.
@@ -188,7 +188,7 @@ have a high saturation value. Saturation is a percentage value; 0% means a shade
 Lightness is also a percentage; 0% is black, 100% is white.
 
 
-######S3.3 Combine gradient and color thresholding
+###### S3.3 Combine gradient and color thresholding
 
 Following are the visualization of steps performed to get the binary image, implemented by function `visualize()`
 int `imgProcess.py`
@@ -203,7 +203,7 @@ Meaning on the masking in `combine_thresh` in file `img_process.py`: </br>
 `(self.s_binary == 1) & (self.l_binary == 1) | (self.sxbinary == 1)` : 
 color different from road and is not caused by lighting difference, or is at edge found by sobel filter. </br>
 
-######S3.4 Remove noise from binary images 
+###### S3.4 Remove noise from binary images 
 Opencv function `Closing` is the dilation followed by erosion. 
 It is useful in closing small holes inside the foreground objects, or small black points on the object.
 ![alt text][closing]
