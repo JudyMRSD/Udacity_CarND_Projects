@@ -61,7 +61,7 @@ project
 [curvature]: ./data/writeup_images/curvature.png
 [line_fit_formula]:./data/writeup_images/line_fit_formula.jpg
 # Basic Concepts
-####Camera intrinsic and extrinsic matrices
+#### Camera intrinsic and extrinsic matrices
 In pinhole camera model, a scene view is formed by projecting 3D points into the image plane 
 using a perspective transformation. Following image shows how the variables are defined 
 to describe how to transform points in 3D world coordinates to 3D camera coordinates, and how to transform 
