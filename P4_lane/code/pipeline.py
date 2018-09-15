@@ -5,13 +5,11 @@ from utility.laneBoundary import Boundary
 import os
 import numpy as np
 import cv2
-import matplotlib.image as mpimg
 import tqdm
 import pickle
 
-# TODO: remove this when submit
 # Flag to run on MacOS or Ubuntu for video processing
-Mac = True # False for Ubuntu system, different video format
+Mac = True # False for Ubuntu system, to use different video format
 
 class Pipeline:
     def __init__(self):
@@ -29,8 +27,13 @@ class Pipeline:
         assert (os.path.exists(self.chessboard_in_dir)), "ERROR: Chessboard_In_Dir does not exist"
         assert (os.path.exists(self.chessboard_out_dir)), "ERROR: Chessboard_Out_Dir does not exist"
 
-    # process single image, save intermediate results if output_img_basename is given
     def process_single_img(self, idx, input_img, out_dir = None):
+        '''
+        process single image, save intermediate results if output_img_basename is given
+        :param idx: frame index
+        :param input_img: input frame read from video
+        :param out_dir: directory to save intermediate visualizations
+        '''
         # following Steps are in the order that's listed in README.me
         # Step 2: Apply a distortion correction to raw images.
         undistort_front = cv2.undistort(input_img, self.camera_matrix, self.distorsion_coefficient, None, self.camera_matrix)
@@ -59,9 +62,14 @@ class Pipeline:
         return result_imgself
 
     def process_video(self, in_video, out_video, calibrate):
+        '''
+        Process video by detecting lanes frame by frame
+        :param in_video: input video path
+        :param out_video: output video path
+        :param calibrate: flag to indicate whether calibration is needed
+        '''
         # Step 1 : Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
         if not os.path.exists(self.chessboard_out_dir) or calibrate:
-            print("self.chessboard_in_dir",self.chessboard_in_dir)
             self.calibTool.calc_param(self.chessboard_in_dir, self.chessboard_out_dir, 6, 9, self.save_params_path)
 
         cap = cv2.VideoCapture(in_video)
@@ -98,21 +106,9 @@ def main():
     data_dir = '../data/'
     in_video = data_dir+"video/input_video/project_video.mp4"
     out_video = data_dir+"video/output_video/project_video_out.mp4"
-    # Points (hand selected) needed to warp images to bird eye view, these are hand selected points
-    # lane_ends = [left_lane_top_x, left_lane_top_y, right_lane_top_x, right_lane_top_y] encodes the end of two lanes
-    # that maps to (0,0) and (w,0) in bird eye view, doesn't change if intrinsics and extrinsics not changed
-
 
     pl = Pipeline()
     pl.check_paths(data_dir)
-    #
-    #
-    # dist_pickle = pickle.load(open(data_dir + 'camera_calib_param/dist_pickle.p', 'rb'))
-    # pl.camera_matrix = dist_pickle["camera_matrix"]
-    # pl.distorsion_coefficient = dist_pickle["distorsion_coefficient"]
-    # input_img = cv2.imread(data_dir+'test_images/test2.jpg')
-    # pl.process_single_img(0, input_img, out_dir=data_dir+"pipeline_out/")
-
 
     #input and output video directory
     # Step 2-7 : process each frame in the video

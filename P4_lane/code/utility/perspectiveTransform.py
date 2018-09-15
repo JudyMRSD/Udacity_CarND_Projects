@@ -8,7 +8,11 @@ import numpy as np
 Left_lane_top_x, Left_lane_top_y, Right_lane_top_x, Right_lane_top_y = 550, 460, 730, 460
 
 class Perspective():
-    # the transformation only needs to be calculated once, assuming the extrinsics and intrinxics did not change
+    '''
+    Calculate the transformation matrix between birdeye view and front view
+    the transformation only needs to be calculated once,
+    assuming the extrinsics and intrinxics did not change
+    '''
     def warp_front_to_birdeye(self, front_img, out_dir=None):
         h, w = front_img.shape[0:2]
         src = np.float32([[w, h],

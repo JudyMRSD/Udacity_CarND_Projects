@@ -20,13 +20,11 @@ class CameraCalibration:
         :param corner_cols: Ground truth number of columns for chessboards
         '''
         image_paths = glob.glob(chessboard_in_dir+"*.jpg")
-        print("image_paths", image_paths)
         # prepare object points in 3d world coordinate, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         objp = np.zeros((corner_cols* corner_rows,3), np.float32)
         objp[:,:2] = np.mgrid[0:corner_cols, 0:corner_rows].T.reshape(-1,2)
         # Step through the list and search for chessboard corners
         for idx, fname in enumerate(image_paths):
-            print("fname", fname)
             img = cv2.imread(fname)
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             ret, corners = cv2.findChessboardCorners(gray, (corner_cols, corner_rows), None)

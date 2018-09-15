@@ -6,6 +6,7 @@ from utility.perspectiveTransform import Perspective
 # Used code from Udacity online course 18 :  Detect lane pixels and fit to find the lane boundary
 class Boundary():
     def __init__(self):
+        # half window width for finding lane boundary
         self.margin = 100
         # Choose the number of sliding windows
         self.nwindows = 9
@@ -18,16 +19,22 @@ class Boundary():
     # Helper functions
     ####################################
     def y_to_x(self, y):
-        # calculate x = ay**2 + by + c
-        # self.left_fit and self.right_fit contains [a,b,c]
-        print("self.left_fit" , self.left_fit)
+        '''
+        Calculate x = ay**2 + by + c
+        self.left_fit and self.right_fit contains [a,b,c]
+        :param y: y coordinate to find corresponding x coordinate
+        '''
         self.left_fit_x = self.left_fit[0] * (y ** 2) + self.left_fit[1] * y + self.left_fit[2]
         self.right_fit_x = self.right_fit[0] * (y ** 2) + self.right_fit[1] * y + self.right_fit[2]
-        print("self.left_fit_x.shape", self.left_fit_x.shape,"y.shape", y.shape )
 
     @staticmethod
     def polynomial_to_points(left_x, right_x, y):
-        print("left_x, y", left_x.shape, y.shape)
+        '''
+        convert x,y coordinates to list of points for opencv plotting
+        :param left_x: x coordinates for left lane
+        :param right_x: x coordinates for right lane
+        :param y: y coordinates
+        '''
         left_vertices = np.array([np.transpose(np.vstack([left_x, y]))], dtype=np.int32)
         # flip the points on the right edge of the left traffic lane, so the points are ordered for fillPoly
         # 1               6
@@ -41,6 +48,13 @@ class Boundary():
 
 
     def histogram_peaks(self, outdir, img):
+        '''
+        Find x coordinate for left and right lane near bottom of image using peaks for histogram
+        of pixel intensities in the lower half of the binary image
+        :param outdir: directory to save histogram
+        :param img: input binary image with value between 0 and 255
+        :return:
+        '''
         self.img = img
         assert (len(np.unique(self.img) == 2) , "input to histogram_peaks must be binary image, with values 0 or 255")
         # take a histogram along all the columns in the lower half of the image
@@ -57,10 +71,13 @@ class Boundary():
         midpoint = int(histogram.shape[0] // 2)
         self.leftx_base = np.argmax(histogram[:midpoint])
         self.rightx_base = np.argmax(histogram[midpoint:]) + midpoint
-        print("self.leftx_base", self.leftx_base,"self.rightx_base", self.rightx_base )
         plt.close()
 
     def calc_curvature(self):
+        '''
+        Calculate curvature of left and right lanes
+        :return: radius of curvature for left and right lane
+        '''
         y = self.img_h - 10
         # value taken from Udacity course
         # Define conversions in x and y from pixels space to meters
@@ -76,6 +93,9 @@ class Boundary():
         return left_curverad, right_curverad
 
     def calc_dist_center(self):
+        '''
+        :return: Distance of the vehicle center to road center
+        '''
         # assume center of image is along the center line of vehicle
         center_car_x = int(self.img_w / 2)
         # only take the x value for the left and right line polynomial towards bottom of frame
@@ -84,6 +104,10 @@ class Boundary():
         return dist
 
     def create_window(self, i):
+        '''
+        Helper function for slide_window, find the boundary for windows for left and right lanes
+        :param i: ith window
+        '''
         # Set height of windows (image height divided by number of sliding windows)
         window_height = np.int(self.img_h // self.nwindows)
 
@@ -103,6 +127,9 @@ class Boundary():
                       (0, 255, 0), 2)
 
     def recenter_window(self):
+        '''
+        Recenter window according to average x coordinate of non-zero pixels within the window
+        '''
         # Part 1: find indices for pixels within the current window that have nonzero intensity
         # bool_in_window_left[i] is true when self.nonzeroy[i] and self.nonzerox[i] is a point in window
         bool_in_window_left = ((self.nonzeroy >= self.win_y_low) & (self.nonzeroy < self.win_y_high) &
@@ -133,6 +160,9 @@ class Boundary():
 
 
     def slide_window(self):
+        '''
+        Find pixels belonging to left and right lanes by sliding window from bottom of image upward
+        '''
         # Current positions to be updated for each window
         self.leftx_current = self.leftx_base
         self.rightx_current = self.rightx_base
@@ -154,6 +184,10 @@ class Boundary():
 
 
     def fit_use_prev(self):
+        '''
+        Find indices for pixels belonging to left and right lane by searching around
+        the lane lines found in previous frame
+        '''
         # Assume you now have a new warped binary image
         # from the next frame of video (also called "binary_warped")
         # You don't need to do a blind search again, but instead you can just search
@@ -171,6 +205,11 @@ class Boundary():
     ####################################
     # this calls slide window or fit using previous result depends
     def fit_lane(self, birdeye_binary, idx):
+        '''
+        Find lane lines in a birdeye view binary image and fit a second order polynomial to each line
+        :param birdeye_binary: birdeye view binary image
+        :param idx: index of frame in a video
+        '''
         # Identify the x and y positions of all nonzero pixels in the image
         self.img = birdeye_binary
         nonzero_pix = self.img.nonzero()
@@ -201,7 +240,13 @@ class Boundary():
 
 
     def visualize_lane(self, outdir, original_img, to_front_matrix, blend_alpha = 0.5):
-
+        '''
+        calculate the curvature and distance to center, visualize the lane lines
+        :param outdir: path to store visualization
+        :param original_img: original frame from video
+        :param to_front_matrix: matrix to warp birdeye view to front view
+        :param blend_alpha: parameter for blending lane lines with original image
+        '''
         # Part 1: Create an image with lanes in bird-eye view, then warp it to front view
         # Generate x and y values for plotting
         self.ploty = np.linspace(0, original_img.shape[0] - 1, original_img.shape[0])
