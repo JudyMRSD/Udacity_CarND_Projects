@@ -17,6 +17,10 @@ Following are the major steps:
 * S7: Warp the detected lane boundaries back onto the original image, output visual display of the lane boundaries 
        and numerical estimation of lane curvature and vehicle position.
 
+The final output video can be accessed from YouTube:
+`https://youtu.be/ShRBOH0mzXU`
+
+
 
 # File Structure
 
