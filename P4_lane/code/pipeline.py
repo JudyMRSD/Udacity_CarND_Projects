@@ -14,8 +14,6 @@ import pickle
 # Flag to run on MacOS or Ubuntu for video processing
 Mac = True # False for Ubuntu system, different video format
 
-
-
 class Pipeline:
     def __init__(self):
         self.calibTool = CameraCalibration()
@@ -57,7 +55,7 @@ class Pipeline:
         # Step 5: Detect lane pixels and fit to find the lane boundary as f(y)
         # Determine curvature of the lane and vehicle position with respect to center
         self.boundaryTool.fit_lane(birdeye_binary, idx)
-        # Step 6-8: Determine the curvature and vehicle position, and warp back to original image
+        # Step 6-7: Determine the curvature and vehicle position, and warp back to original image
         result_imgself = self.boundaryTool.visualize_lane(out_dir, input_img, self.to_front_matrix, blend_alpha=0.5)
         return result_imgself
 
