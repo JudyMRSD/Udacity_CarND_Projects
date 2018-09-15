@@ -313,6 +313,17 @@ near the bottom of image (close to the vehicle side not the horizon side) as cen
 
 Then convert the distance between vehicle center and lane center from pixel to meters. 
 
+U.S. regulations that require a minimum lane width is 3.7 meters, corresponding to 
+the left and right lines separation of roughly 700 pixels in x-dimension.
+The video data provided that the line is 30 meters long in y-dimension. 
+
+Therefore, to convert from pixels to real-world meter measurements:
+
+```apple js
+ym_per_pix = 30/720    // meters per pixel in y dimension
+xm_per_pix = 3.7/700  //meters per pixel in x dimension
+```
+
 #### S7: Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
 First, create an image with left and right lanes plotted bird-eye view, then warp it to front view. 
@@ -323,17 +334,14 @@ The part is implemented in `visualize_lane`.
 ![alt text][blend_lane]
 
 
-
-
-
 # Reference
 * Related concepts and images
-`http://ksimek.github.io/2012/08/22/extrinsic/`</br>
+
+`http://ksimek.github.io/2012/08/22/extrinsic/` 
 `https://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html`</br>
 `http://ksimek.github.io/2013/08/13/intrinsic/`
 `https://docs.opencv.org/3.4/d9/d61/tutorial_py_morphological_ops.html`
-* Sobel filter image
-CMU computer vision course
+* Sobel filter and dilation images are from CMU computer vision course
 
 
 
