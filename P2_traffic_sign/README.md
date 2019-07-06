@@ -141,9 +141,3 @@ Testing accuracy was 0.939. <br/>
 Top 5 softmax probabilities for prediction on each image is generated, and the 
 class with highest probability was selected to calculate accuracy. <br/>
 Higher softmax probability for a class indicates higher confidence of the model on the prediction. 
-
-## Overall impolementation
-step0: define hyper parameters, learning rate = 0.01  <br/>
-step1: call prepareDataPipeline to get preprocessed data.  <br/>
-step2: call run-training on training dataset, and printout accuracy on validation dataset  <br/>
-step3: load saved model and test on testing images found from internet <br/>
