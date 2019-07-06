@@ -34,6 +34,7 @@ class FeatureUtil:
         num_dim_hog_single_channel = 0
         for c in range(channels):
             # feature_vector=False means feature is not changed to 1d vector using .ravel()
+            # (n_blocks_row, n_blocks_col, n_cells_row, n_cells_col, n_orient) = (7, 7, 2, 2, 15) ndarray HOG descriptor for the image
             hog_channel = hog(image[:,:,c], orientations=self.hog_orient,
                                      pixels_per_cell=(self.hog_pixel_per_cell, self.hog_pixel_per_cell),
                                      cells_per_block=(self.hog_cell_per_block, self.hog_cell_per_block),
@@ -43,7 +44,7 @@ class FeatureUtil:
             num_dim_hog_single_channel = hog_channel.ndim
             hog_channel = np.expand_dims(hog_channel, axis = num_dim_hog_single_channel)
             hog_features.append(hog_channel)
-        hog_features_all = np.concatenate([hog_features[i] for i in range(channels)], axis=num_dim_hog_single_channel) # (7, 7, 2, 2, 15)
+        hog_features_all = np.concatenate([hog_features[i] for i in range(channels)], axis=num_dim_hog_single_channel)
         return hog_features_all
 
     # use all channels to extract HOG features
@@ -56,6 +57,7 @@ class FeatureUtil:
             # Read in each one by one
             image = cv2.imread(imgs[i])
             hog_features = self.hog_single_img_feature(image)
+            # 7* 7* 2* 2* 15 features * 3channels = 1x 8820  
             hog_features = np.ravel(hog_features)
             features.append(hog_features)
         return features
