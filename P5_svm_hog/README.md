@@ -51,23 +51,27 @@ project
 Following are the steps of how images are preprocessed for HOG feature extraction, the process of 
 choosing prameters for HOG, and the SVM training result for HOG features. 
 
-1. Image preprocess: <br\>
+1. Image preprocess:
+
 StandardScaler() was used for normalizing the HOG features to zero mean and unit variance.
 Only the training data was used for calculating the scaler, since the model 
 will get information about the test set if the test set was also included in this calculation.
 
-After obtaining the scalar, both the training and test sets were normalized using the scaler. <br\>
+After obtaining the scalar, both the training and test sets were normalized using the scaler.  
 
-Relavent code are in `feature_util.py` implemented as  `prep_feature_dataset`. <br\>
+Relavent code are in `feature_util.py` implemented as  `prep_feature_dataset`.  
 
 2. HOG is performed using `RGB` images, with 15 HOG orientations, 
-using 8  HOG pixels per cell, and 2 HOG cells per block. <br/>
-HOG block normalization used 'L2-Hys'. This means L2-norm followed by limiting the maximum 
-values to 0.2 (Hys stands for hysteresis) and renormalization using L2-norm. <br/>
-HOG features are plotted for varies choice of HOG parameters and color spaces. The ones that 
-can generate more distinctive HOG images for car and no-car images are chosen. <br/>
+using 8  HOG pixels per cell, and 2 HOG cells per block.  
 
-Reason for choose YUV:  <br/>
+HOG block normalization used 'L2-Hys'. This means L2-norm followed by limiting the maximum 
+values to 0.2 (Hys stands for hysteresis) and renormalization using L2-norm.  
+
+HOG features are plotted for varies choice of HOG parameters and color spaces. The ones that 
+can generate more distinctive HOG images for car and no-car images are chosen.  
+
+Reason for choose YUV:   
+
 YUV gives more distinct HOG features between car and no-car images across all channels, as shown
  in Figure 1, 2, 3, which are HOG features for each channel in HSV, RGB and YUV color spaces.<br/>
 The first row holds car images, the second row is for no-car images.<br/>
