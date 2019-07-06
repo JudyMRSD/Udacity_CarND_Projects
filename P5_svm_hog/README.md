@@ -65,7 +65,7 @@ After obtaining the scalar, both the training and test sets were normalized usin
 
 Relavent code are in `feature_util.py` implemented as  `prep_feature_dataset`.  
 
-2. HOG is performed using `RGB` images, with 15 HOG orientations, 
+2. HOG is performed using `YUV` images, with 15 HOG orientations, 
 using 8  HOG pixels per cell, and 2 HOG cells per block.  
 
 HOG block normalization used 'L2-Hys'. This means L2-norm followed by limiting the maximum 
