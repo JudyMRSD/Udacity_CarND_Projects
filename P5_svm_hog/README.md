@@ -56,6 +56,10 @@ choosing prameters for HOG, and the SVM training result for HOG features.
 StandardScaler() was used for normalizing the HOG features to zero mean and unit variance.
 Only the training data was used for calculating the scaler, since the model 
 will get information about the test set if the test set was also included in this calculation.
+```
+train_X = (train_X – mean_trainX) / standard_deviation_trainX
+test_X = (test_X – mean_trainX) / standard_deviation_trainX
+```
 
 After obtaining the scalar, both the training and test sets were normalized using the scaler.  
 
