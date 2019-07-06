@@ -48,6 +48,7 @@ class FeatureUtil:
         return hog_features_all
 
     # use all channels to extract HOG features
+    # return n x 8820,  n is number of examples 
     def hog_multiple_imgs(self, imgs):
         features = []
         # Iterate through list of images
@@ -58,7 +59,7 @@ class FeatureUtil:
             image = cv2.imread(imgs[i])
             hog_features = self.hog_single_img_feature(image)
             # 7* 7* 2* 2* 15 features * 3channels = 1x 8820  
-            hog_features = np.ravel(hog_features)
+            hog_features = np.ravel(hog_features) 
             features.append(hog_features)
         return features
 
