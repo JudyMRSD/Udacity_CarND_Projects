@@ -120,9 +120,9 @@ Effects of different parameters for window scale and region of interests locatio
 by how well the bounding box is covering the vehicles, number of false positives and false negatives.
 
 Step 3. Heatmap was used for further refinement of result.<br/>
-Each pixel in the heatmap represent how many times this pixel was inside a bounding box
+Each pixel in the heatmap represent how many times this pixel was inside a bounding box across a history of t frames 
 predicted in Step 2 using different sliding window scales. If a pixel was predicted as vehicle pixel
-for multiple bounding box at the same scale, or for bounding boxes at different scales, then
+for multiple bounding box at the same scale, for bounding boxes at different scales, or for bounding box across t history frames, then
 this pixel has a high confidence of being a vehicle. 
 
 Follwoing is a visualization of the sliding window approach. 
