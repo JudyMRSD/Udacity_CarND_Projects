@@ -120,7 +120,7 @@ extrinsics `[R |t]` that satisfies `m' = A[R|t] M'`.
 
 *Explaination on inputs*
 
-`objectPoints (M')` : 3d points in 3d world coordinate (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0) stored as a list
+`objectPoints (M')` : 3d points in 3d world coordinate (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0) stored as a list. Only the ratio in 3D world coordinate matters here since the x, y, z in camera coordinate will be converted to : x’=x/z, y’=y/z, 1 as ratios.
 
 `imagePoints (m')` :  Detected 2d corners in image plane 
 
